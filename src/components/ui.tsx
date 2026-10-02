@@ -18,11 +18,25 @@ export function ClubLogo({ club, size = 48 }: { club: { name: string; logo_url: 
   );
 }
 
+const TONES = ["#6366f1", "#d946ef", "#f97316", "#10b981", "#0ea5e9", "#f43f5e", "#eab308", "#8b5cf6"];
+
+/** Stable colour for a string (category, stat label…), so the same thing is always the same colour. */
+export function toneFor(key: string): string {
+  let h = 0;
+  for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return TONES[h % TONES.length];
+}
+
+/** Category-style pill, tinted by its text. */
+export function TintBadge({ children, tone }: { children: string; tone?: string }) {
+  return <span className="badge tone" style={{ "--tone": tone ?? toneFor(children) } as React.CSSProperties}>{children}</span>;
+}
+
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <h1 className="gradient-text w-fit text-2xl font-bold tracking-tight">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -32,9 +46,9 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 
 export function Stat({ label, value, hint, delta }: { label: string; value: ReactNode; hint?: ReactNode; delta?: number | null }) {
   return (
-    <div className="card">
+    <div className="card relative overflow-hidden" style={{ "--tone": toneFor(label), borderLeft: "4px solid var(--tone)", background: "linear-gradient(135deg, color-mix(in srgb, var(--tone) 12%, var(--surface)), var(--surface) 70%)" } as React.CSSProperties}>
       <div className="text-xs font-medium uppercase tracking-wide text-muted">{label}</div>
-      <div className="mt-1 text-3xl font-bold tabular-nums">{value}</div>
+      <div className="mt-1 text-3xl font-bold tabular-nums" style={{ color: "color-mix(in srgb, var(--tone) 80%, var(--foreground))" }}>{value}</div>
       <div className="mt-1 flex items-center gap-2 text-xs text-muted">
         {delta != null && (
           <span className={delta >= 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "font-semibold text-red-600 dark:text-red-400"}>

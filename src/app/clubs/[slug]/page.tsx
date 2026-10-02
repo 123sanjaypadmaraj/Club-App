@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { EventCard, type EventCardData } from "@/components/EventCard";
-import { ClubLogo, Empty, ExtLink } from "@/components/ui";
+import { ClubLogo, Empty, ExtLink, TintBadge } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
 import type { Announcement, Club } from "@/lib/types";
 
@@ -35,10 +35,10 @@ export default async function ClubPage({ params }: PageProps<"/clubs/[slug]">) {
 
   return (
     <div className="space-y-10">
-      <header className="card" style={{ borderTop: `4px solid ${club.accent_color}` }}>
+      <header className="card" style={{ borderTop: `4px solid ${club.accent_color}`, background: `linear-gradient(135deg, color-mix(in srgb, ${club.accent_color} 14%, var(--surface)), var(--surface) 65%)` }}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <span className="badge">{club.category}</span>
+            <TintBadge>{club.category}</TintBadge>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">{club.name}</h1>
             {club.tagline && <p className="mt-1 text-lg text-muted">{club.tagline}</p>}
           </div>
@@ -62,10 +62,10 @@ export default async function ClubPage({ params }: PageProps<"/clubs/[slug]">) {
 
       {announcements.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Announcements</h2>
+          <h2 className="mb-3 border-l-4 border-orange-500 pl-3 text-lg font-semibold">Announcements</h2>
           <ul className="space-y-3">
             {announcements.map((a) => (
-              <li key={a.id} className="card">
+              <li key={a.id} className="card border-l-4 border-l-orange-400">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-medium">{a.pinned && "📌 "}{a.title}</h3>
                   <time className="text-xs text-muted">{fmtDate(a.created_at)}</time>
@@ -78,7 +78,7 @@ export default async function ClubPage({ params }: PageProps<"/clubs/[slug]">) {
       )}
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Upcoming events</h2>
+        <h2 className="mb-3 border-l-4 border-fuchsia-500 pl-3 text-lg font-semibold">Upcoming events</h2>
         {upcoming.length === 0 ? <Empty>No upcoming events.</Empty> : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{upcoming.map((e) => <EventCard key={e.id} e={e} showClub={false} />)}</div>
         )}
@@ -86,7 +86,7 @@ export default async function ClubPage({ params }: PageProps<"/clubs/[slug]">) {
 
       {earlier.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Past events</h2>
+          <h2 className="mb-3 border-l-4 border-slate-400 pl-3 text-lg font-semibold">Past events</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{earlier.map((e) => <EventCard key={e.id} e={e} showClub={false} />)}</div>
         </section>
       )}

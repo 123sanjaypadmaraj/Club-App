@@ -121,7 +121,10 @@ export function CheckinConsole({ slug, eventId, initial, capacity }: { slug: str
 
   const onEnter = () => {
     if (matches.length === 1 && !matches[0].attended) void toggle(matches[0], true);
-    else if (matches.length === 0 && parseTicketCode(query)) {
+    else if (matches.length === 1) {
+      const m = matches[0];
+      say("warn", `${m.full_name} was already checked in${m.attended_at ? ` at ${fmtTime(m.attended_at)}` : ""}`);
+    } else if (matches.length === 0 && parseTicketCode(query)) {
       void checkInCode(query);
       setQuery("");
     }

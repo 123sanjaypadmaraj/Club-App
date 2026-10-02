@@ -15,7 +15,7 @@ export function DashNav({ isAdmin }: { isAdmin: boolean }) {
   return (
     <nav className="mb-6 flex gap-1 print:hidden rounded-lg border border-line bg-surface p-1 text-sm">
       {items.map((i) => (
-        <Link key={i.href} href={i.href} className={`rounded-md px-3 py-1.5 font-medium ${i.match(path) ? "bg-brand text-brand-fg" : "text-muted hover:text-foreground"}`}>
+        <Link key={i.href} href={i.href} className={`rounded-md px-3 py-1.5 font-medium ${i.match(path) ? "bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white shadow-sm" : "text-muted hover:bg-brand/10 hover:text-foreground"}`}>
           {i.label}
         </Link>
       ))}

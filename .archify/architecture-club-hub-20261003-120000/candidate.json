@@ -1,0 +1,487 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Club Hub End-to-End Flow",
+    "output": ".archify/architecture-club-hub-20261003-120000/club-hub.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/123sanjaypadmaraj/Club-App.git",
+      "revision": "1b50e07465f4162b5b3ae565b47f3027d6615cb8"
+    }
+  },
+  "components": [
+    {
+      "id": "visitor",
+      "type": "external",
+      "label": "Visitors",
+      "sublabel": "students, no login",
+      "pos": [
+        40,
+        60
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "lead",
+      "type": "external",
+      "label": "Leads / Admin",
+      "sublabel": "logged-in browser",
+      "pos": [
+        40,
+        340
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "pubpages",
+      "type": "frontend",
+      "label": "Public pages",
+      "sublabel": "tickets, .ics calendar",
+      "pos": [
+        270,
+        60
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/app/ticket/[code]/page.tsx",
+          "line": 23,
+          "end_line": 24
+        },
+        {
+          "path": "src/app/events/[id]/calendar/route.ts",
+          "line": 7,
+          "end_line": 26
+        }
+      ]
+    },
+    {
+      "id": "pubactions",
+      "type": "backend",
+      "label": "Public actions",
+      "sublabel": "register, feedback",
+      "pos": [
+        500,
+        60
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/app/actions.ts",
+          "line": 11,
+          "end_line": 66
+        }
+      ]
+    },
+    {
+      "id": "proxy",
+      "type": "security",
+      "label": "proxy.ts",
+      "sublabel": "session + /dashboard gate",
+      "pos": [
+        270,
+        340
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/proxy.ts",
+          "line": 5,
+          "end_line": 35
+        }
+      ]
+    },
+    {
+      "id": "dashpages",
+      "type": "frontend",
+      "label": "Dashboard pages",
+      "sublabel": "layout requires profile",
+      "pos": [
+        500,
+        340
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/app/dashboard/layout.tsx",
+          "line": 4,
+          "end_line": 11
+        },
+        {
+          "path": "src/app/dashboard/clubs/[slug]/layout.tsx",
+          "line": 6,
+          "end_line": 8
+        }
+      ]
+    },
+    {
+      "id": "datalayer",
+      "type": "security",
+      "label": "Guards + data",
+      "sublabel": "auth.ts, data.ts",
+      "pos": [
+        500,
+        200
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/lib/auth.ts",
+          "line": 7,
+          "end_line": 47
+        },
+        {
+          "path": "src/lib/data.ts",
+          "line": 7,
+          "end_line": 26
+        }
+      ]
+    },
+    {
+      "id": "dashactions",
+      "type": "backend",
+      "label": "Dashboard actions",
+      "sublabel": "events, check-in, CSV",
+      "pos": [
+        730,
+        340
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/app/dashboard/actions.ts",
+          "line": 226,
+          "end_line": 243
+        },
+        {
+          "path": "src/app/dashboard/export/members/route.ts",
+          "line": 7,
+          "end_line": 27
+        }
+      ]
+    },
+    {
+      "id": "client",
+      "type": "backend",
+      "label": "Supabase client",
+      "sublabel": "anon key + cookies",
+      "pos": [
+        730,
+        200
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/lib/supabase/server.ts",
+          "line": 5,
+          "end_line": 24
+        }
+      ]
+    },
+    {
+      "id": "svc",
+      "type": "security",
+      "label": "Service client",
+      "sublabel": "bypasses RLS",
+      "pos": [
+        960,
+        340
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "admin only",
+      "sources": [
+        {
+          "path": "src/lib/supabase/server.ts",
+          "line": 26,
+          "end_line": 33
+        },
+        {
+          "path": "src/app/dashboard/actions.ts",
+          "line": 425,
+          "end_line": 436
+        }
+      ]
+    },
+    {
+      "id": "auth",
+      "type": "cloud",
+      "label": "Supabase Auth",
+      "sublabel": "email + password",
+      "pos": [
+        960,
+        480
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/app/login/actions.ts",
+          "line": 7,
+          "end_line": 16
+        }
+      ]
+    },
+    {
+      "id": "pg",
+      "type": "database",
+      "label": "Postgres",
+      "sublabel": "RLS, triggers, views",
+      "pos": [
+        960,
+        200
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "supabase/schema.sql",
+          "line": 192,
+          "end_line": 199
+        },
+        {
+          "path": "supabase/event_ops.sql",
+          "line": 64,
+          "end_line": 81
+        }
+      ]
+    },
+    {
+      "id": "scripts",
+      "type": "backend",
+      "label": "Ops scripts",
+      "sublabel": "seed, scrape, accounts",
+      "pos": [
+        1190,
+        200
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "scripts/seed-clubs.mjs",
+          "line": 6,
+          "end_line": 13
+        },
+        {
+          "path": "scripts/create-club-accounts.mjs",
+          "line": 18,
+          "end_line": 21
+        }
+      ]
+    },
+    {
+      "id": "clubsjson",
+      "type": "database",
+      "label": "clubs.json",
+      "sublabel": "data + snapshots",
+      "pos": [
+        1190,
+        60
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "scripts/scrape-clubs.mjs",
+          "line": 10,
+          "end_line": 12
+        },
+        {
+          "path": "scripts/build-seed.mjs",
+          "line": 9,
+          "end_line": 9
+        }
+      ]
+    }
+  ],
+  "boundaries": [],
+  "connections": [
+    {
+      "id": "visitor-pages",
+      "from": "visitor",
+      "to": "pubpages",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "pages-actions",
+      "from": "pubpages",
+      "to": "pubactions",
+      "label": "form POST",
+      "variant": "emphasis"
+    },
+    {
+      "id": "pages-reads",
+      "from": "pubpages",
+      "to": "datalayer",
+      "label": "reads",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "actions-client",
+      "from": "pubactions",
+      "to": "client",
+      "label": "insert",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "lead-proxy",
+      "from": "lead",
+      "to": "proxy",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "proxy-dash",
+      "from": "proxy",
+      "to": "dashpages",
+      "label": "session ok",
+      "variant": "security"
+    },
+    {
+      "id": "dash-guards",
+      "from": "dashpages",
+      "to": "datalayer",
+      "label": "requireClubAccess",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "guards-client",
+      "from": "datalayer",
+      "to": "client",
+      "label": "per request"
+    },
+    {
+      "id": "dash-actions",
+      "from": "dashpages",
+      "to": "dashactions",
+      "label": "form POST",
+      "variant": "emphasis"
+    },
+    {
+      "id": "dashactions-client",
+      "from": "dashactions",
+      "to": "client",
+      "label": "RLS writes",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "dashactions-svc",
+      "from": "dashactions",
+      "to": "svc",
+      "label": "createLead",
+      "variant": "dashed"
+    },
+    {
+      "id": "client-pg",
+      "from": "client",
+      "to": "pg",
+      "label": "queries"
+    },
+    {
+      "id": "svc-auth",
+      "from": "svc",
+      "to": "auth",
+      "label": "admin.createUser",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "svc-pg",
+      "from": "svc",
+      "to": "pg",
+      "label": "profiles, leads",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "scripts-pg",
+      "from": "scripts",
+      "to": "pg",
+      "label": "service role",
+      "variant": "dashed"
+    },
+    {
+      "id": "scripts-json",
+      "from": "scripts",
+      "to": "clubsjson",
+      "label": "reads / writes",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Public flow",
+      "items": [
+        "Visitors register or leave feedback without an account",
+        "Postgres RLS and triggers decide confirmed vs waitlisted",
+        "Ticket page reads via ticket_lookup, a security-definer function"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Lead / admin flow",
+      "items": [
+        "proxy.ts refreshes the session cookie and redirects logged-out users to /login",
+        "requireClubAccess 404s clubs the user does not manage",
+        "Check-in by ticket code updates registrations under RLS"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security",
+      "items": [
+        "Service-role key is used only after requireAdmin in createLeadAction",
+        "RLS protects participant data even from direct API calls",
+        "CI runs lint, tsc and vitest on push and PR"
+      ]
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/SubmitButton";
-import { ExtLink, Field, Notice } from "@/components/ui";
+import { ExtLink, Field, Notice, TintBadge } from "@/components/ui";
 import { fmtDateTime } from "@/lib/format";
 import { eventShareDescription } from "@/lib/events";
 import { registerForEvent } from "@/app/actions";
@@ -54,7 +54,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
 
       <header className="card" style={{ borderTop: `4px solid ${club.accent_color}` }}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="badge">{event.category}</span>
+          <TintBadge>{event.category}</TintBadge>
           {cancelled && <span className="badge border-red-500/40 text-red-600">Cancelled</span>}
           {event.status === "draft" && <span className="badge">Draft (only you can see this)</span>}
         </div>

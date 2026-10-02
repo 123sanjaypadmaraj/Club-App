@@ -41,7 +41,7 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
     const s = p.toString();
     return s ? `/events?${s}` : "/events";
   };
-  const chip = (active: boolean) => `badge ${active ? "bg-brand text-brand-fg border-transparent" : "hover:bg-black/5 dark:hover:bg-white/10"}`;
+  const chip = (active: boolean) => `badge ${active ? "bg-brand text-brand-fg border-transparent" : "hover:bg-brand/10 hover:border-brand/40"}`;
 
   return (
     <>
@@ -56,13 +56,13 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
           {clubs.map((c) => <Link key={c.id} href={href(category, c.slug)} className={chip(clubSlug === c.slug)}>{c.name}</Link>)}
         </div>
       </div>
-      <h2 className="mb-3 text-lg font-semibold">Upcoming</h2>
+      <h2 className="mb-3 border-l-4 border-fuchsia-500 pl-3 text-lg font-semibold">Upcoming</h2>
       {upcoming.length === 0 ? (
         <Empty>No upcoming events{category || clubSlug ? " match these filters" : ""}.</Empty>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{upcoming.map((e) => <EventCard key={e.id} e={e} live={liveIds.has(e.id)} />)}</div>
       )}
-      <h2 className="mb-3 mt-10 text-lg font-semibold">Recent</h2>
+      <h2 className="mb-3 mt-10 border-l-4 border-slate-400 pl-3 text-lg font-semibold">Recent</h2>
       {earlier.length === 0 ? (
         <Empty>No past events{category || clubSlug ? " match these filters" : " yet"}.</Empty>
       ) : (

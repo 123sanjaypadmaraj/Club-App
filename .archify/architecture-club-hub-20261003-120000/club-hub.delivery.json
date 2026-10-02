@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "6605e72e-74fd-4b36-b1dc-2a42c484b98e",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\padma\\Downloads\\Club App\\.archify\\architecture-club-hub-20261003-120000\\candidate.json",
+  "output": "C:\\Users\\padma\\Downloads\\Club App\\.archify\\architecture-club-hub-20261003-120000\\club-hub.html",
+  "specification": {
+    "sha256": "55f73efdc4ef36b2612bee6d497b1b347b92174dd1853c58892b889dd008c3f5",
+    "bytes": 9719
+  },
+  "artifact": {
+    "sha256": "4826449249a56b28b8a915756faabb479ae299671aea4a2b5c310d85d5f0a150",
+    "bytes": 779608
+  }
+}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { EventCard, type EventCardData } from "@/components/EventCard";
-import { ClubLogo, Empty } from "@/components/ui";
+import { ClubLogo, Empty, TintBadge, toneFor } from "@/components/ui";
 import type { Club } from "@/lib/types";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
@@ -30,21 +30,23 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <div className="space-y-12">
-      <section className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 px-6 py-10 text-white sm:px-10">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Find your club. Join the fun.</h1>
-        <p className="mt-2 max-w-xl text-indigo-100">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-fuchsia-600 to-orange-500 px-6 py-12 text-white shadow-lg shadow-fuchsia-500/20 sm:px-10">
+        <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-white/15 blur-2xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-20 left-1/3 size-56 rounded-full bg-yellow-300/25 blur-3xl" />
+        <h1 className="relative text-3xl font-bold tracking-tight sm:text-4xl">Find your club. Join the fun.</h1>
+        <p className="relative mt-2 max-w-xl text-white/90">
           {allClubs.length} co-curricular clubs, one place — browse clubs, register for events and share feedback.
         </p>
-        <form className="mt-5 flex max-w-lg gap-2" action="/">
+        <form className="relative mt-5 flex max-w-lg gap-2" action="/">
           <input name="q" defaultValue={q} placeholder="Search clubs…" className="input !border-transparent !text-slate-900 !bg-white" aria-label="Search clubs" />
           {cat && <input type="hidden" name="cat" value={cat} />}
-          <button className="btn !bg-white !text-indigo-700 !border-transparent" type="submit">Search</button>
+          <button className="btn !bg-white !text-fuchsia-700 !border-transparent hover:!bg-yellow-100" type="submit">Search</button>
         </form>
       </section>
 
       <section>
         <div className="mb-4 flex items-end justify-between">
-          <h2 className="text-xl font-bold">Upcoming events</h2>
+          <h2 className="border-l-4 border-fuchsia-500 pl-3 text-xl font-bold">Upcoming events</h2>
           <Link href="/events" className="text-sm text-brand hover:underline">All events →</Link>
         </div>
         {events.length === 0 ? (
@@ -57,11 +59,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
       </section>
 
       <section>
-        <h2 className="mb-4 text-xl font-bold">Clubs</h2>
+        <h2 className="mb-4 border-l-4 border-indigo-500 pl-3 text-xl font-bold">Clubs</h2>
         <div className="mb-5 flex flex-wrap gap-2 text-sm">
-          <Link href={q ? `/?q=${encodeURIComponent(q)}` : "/"} className={`badge px-3 py-1 ${!cat ? "bg-brand text-brand-fg" : ""}`}>All</Link>
+          <Link href={q ? `/?q=${encodeURIComponent(q)}` : "/"} className={`badge px-3 py-1 ${!cat ? "border-transparent bg-brand text-brand-fg" : "hover:bg-brand/10"}`}>All</Link>
           {categories.map((c) => (
-            <Link key={c} href={`/?cat=${encodeURIComponent(c)}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className={`badge px-3 py-1 ${cat === c ? "bg-brand text-brand-fg" : ""}`}>
+            <Link key={c} href={`/?cat=${encodeURIComponent(c)}${q ? `&q=${encodeURIComponent(q)}` : ""}`} className={`badge px-3 py-1 ${cat === c ? "border-transparent text-white" : "tone hover:brightness-95"}`} style={{ "--tone": toneFor(c), ...(cat === c ? { background: toneFor(c) } : {}) } as React.CSSProperties}>
               {c}
             </Link>
           ))}
@@ -71,9 +73,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {clubs.map((c) => (
-              <Link key={c.id} href={`/clubs/${c.slug}`} className="card block transition hover:shadow-md" style={{ borderTop: `3px solid ${c.accent_color}` }}>
+              <Link key={c.id} href={`/clubs/${c.slug}`} className="card block transition hover:-translate-y-0.5 hover:shadow-lg" style={{ borderTop: `3px solid ${c.accent_color}`, background: `linear-gradient(180deg, color-mix(in srgb, ${c.accent_color} 9%, var(--surface)), var(--surface) 60%)` }}>
                 <div className="flex items-start justify-between gap-3">
-                  <span className="badge">{c.category}</span>
+                  <TintBadge>{c.category}</TintBadge>
                   <ClubLogo club={c} size={44} />
                 </div>
                 <h3 className="mt-2 font-semibold">{c.name}</h3>
