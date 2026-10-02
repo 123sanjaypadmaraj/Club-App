@@ -7,8 +7,10 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { parseCsv } from "@/lib/csv";
 import { fromLocalInput, int, safeUrl, str } from "@/lib/format";
 import { duplicateEventRow } from "@/lib/events";
+import { newTicketCode, parseTicketCode } from "@/lib/tickets";
+import { parseParticipantRows, placeholderEmail } from "@/lib/participants";
 import { validatePasswordChange } from "@/lib/password";
-import type { ClubEvent } from "@/lib/types";
+import type { ClubEvent, Registration } from "@/lib/types";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -178,6 +180,147 @@ export async function removeParticipantAction(slug: string, eventId: string, reg
   const { error } = await supabase.from("event_registrations").delete().eq("id", regId).eq("event_id", eventId);
   if (error) return go(`/dashboard/clubs/${slug}/events/${eventId}`, "error", "Could not remove the participant.");
   revalidatePath(`/dashboard/clubs/${slug}/events/${eventId}`);
+}
+
+/* ------------------------------------------------- event-day operations */
+// These return data instead of redirecting: they are called from the live check-in console
+// and the participants table, which update in place.
+
+const UUID = /^[0-9a-f-]{36}$/i;
+const nowIso = () => new Date().toISOString();
+
+export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
+
+/** All registrations (confirmed + waitlisted) of an event — polled by the check-in console. */
+export async function loadRegistrationsAction(slug: string, eventId: string): Promise<ActionResult<{ rows: Registration[] }>> {
+  await requireClubAccess(slug);
+  if (!UUID.test(eventId)) return { ok: false, error: "Bad event." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("event_registrations").select("*").eq("event_id", eventId).order("registered_at");
+  if (error) return { ok: false, error: "Could not load participants." };
+  return { ok: true, rows: (data as Registration[]) ?? [] };
+}
+
+/** Check one person in (or undo). */
+export async function setAttendanceAction(
+  slug: string, eventId: string, regId: string, attended: boolean,
+): Promise<ActionResult<{ attended: boolean; attended_at: string | null }>> {
+  const { profile } = await requireClubAccess(slug);
+  if (!UUID.test(regId)) return { ok: false, error: "Bad participant." };
+  const supabase = await createClient();
+  const attended_at = attended ? nowIso() : null;
+  const { data, error } = await supabase
+    .from("event_registrations")
+    .update({ attended, attended_at, checked_in_by: attended ? profile.id : null })
+    .eq("id", regId).eq("event_id", eventId).eq("status", "confirmed")
+    .select("id");
+  if (error || !data?.length) return { ok: false, error: "Could not update — is this person on the waitlist?" };
+  return { ok: true, attended, attended_at };
+}
+
+export type ScanResult =
+  | { ok: true; result: "checked_in" | "already" | "waitlisted"; id: string; name: string; at: string | null }
+  | { ok: false; error: string };
+
+/** Check in by scanned/typed ticket code. Never un-checks anyone, so double scans are harmless. */
+export async function checkInByCodeAction(slug: string, eventId: string, input: string): Promise<ScanResult> {
+  const { profile } = await requireClubAccess(slug);
+  const code = parseTicketCode(input);
+  if (!code) return { ok: false, error: "That doesn't look like a ticket code." };
+  const supabase = await createClient();
+  const { data: reg } = await supabase
+    .from("event_registrations").select("id, full_name, status, attended, attended_at")
+    .eq("event_id", eventId).eq("ticket_code", code).maybeSingle();
+  if (!reg) return { ok: false, error: "No ticket with that code for this event." };
+  if (reg.status === "waitlisted") return { ok: true, result: "waitlisted", id: reg.id, name: reg.full_name, at: null };
+  if (reg.attended) return { ok: true, result: "already", id: reg.id, name: reg.full_name, at: reg.attended_at };
+  const at = nowIso();
+  const { error } = await supabase
+    .from("event_registrations").update({ attended: true, attended_at: at, checked_in_by: profile.id }).eq("id", reg.id);
+  if (error) return { ok: false, error: "Could not check in. Try again." };
+  return { ok: true, result: "checked_in", id: reg.id, name: reg.full_name, at };
+}
+
+/** Register someone at the door and mark them present. Email is optional (a placeholder keeps the unique-email rule happy). */
+export async function walkInAction(
+  slug: string, eventId: string,
+  input: { full_name: string; email?: string; phone?: string; department?: string; year?: string },
+): Promise<ActionResult<{ row: Registration }>> {
+  const { profile } = await requireClubAccess(slug);
+  const full_name = input.full_name?.trim();
+  if (!full_name) return { ok: false, error: "A name is required." };
+  const email = input.email?.trim().toLowerCase();
+  if (email && !EMAIL.test(email)) return { ok: false, error: "That email doesn't look right." };
+  const ticket_code = newTicketCode();
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("event_registrations").insert({
+    event_id: eventId,
+    full_name,
+    email: email || placeholderEmail(ticket_code),
+    phone: input.phone?.trim() || null,
+    department: input.department?.trim() || null,
+    year: int(input.year ?? null),
+    ticket_code,
+    status: "confirmed",
+    attended: true,
+    attended_at: nowIso(),
+    checked_in_by: profile.id,
+  }).select("*").single();
+  if (error || !data) return { ok: false, error: error?.code === "23505" ? "That email is already registered — search for them instead." : "Could not add them." };
+  return { ok: true, row: data as Registration };
+}
+
+export type BulkOp = "present" | "absent" | "remove" | "promote";
+
+export async function bulkParticipantsAction(
+  slug: string, eventId: string, ids: string[], op: BulkOp,
+): Promise<ActionResult<{ count: number }>> {
+  const { profile } = await requireClubAccess(slug);
+  const clean = [...new Set(ids)].filter((i) => UUID.test(i)).slice(0, 500);
+  if (clean.length === 0) return { ok: false, error: "Nothing selected." };
+  const supabase = await createClient();
+  const t = () => supabase.from("event_registrations");
+  let res;
+  if (op === "remove") {
+    res = await t().delete().in("id", clean).eq("event_id", eventId).select("id");
+  } else if (op === "promote") {
+    res = await t().update({ status: "confirmed" }).in("id", clean).eq("event_id", eventId).eq("status", "waitlisted").select("id");
+  } else if (op === "present") {
+    res = await t().update({ attended: true, attended_at: nowIso(), checked_in_by: profile.id })
+      .in("id", clean).eq("event_id", eventId).eq("status", "confirmed").eq("attended", false).select("id");
+  } else {
+    res = await t().update({ attended: false, attended_at: null, checked_in_by: null })
+      .in("id", clean).eq("event_id", eventId).eq("attended", true).select("id");
+  }
+  if (res.error) return { ok: false, error: "That didn't work. Nothing was changed." };
+  revalidatePath(`/dashboard/clubs/${slug}/events/${eventId}`);
+  return { ok: true, count: res.data?.length ?? 0 };
+}
+
+/** Bulk-add registrations from a CSV (e.g. a Google Forms export). Existing emails are skipped. */
+export async function importParticipantsAction(slug: string, eventId: string, formData: FormData) {
+  await requireClubAccess(slug);
+  const back = `/dashboard/clubs/${slug}/events/${eventId}`;
+  const file = formData.get("file");
+  const text = file instanceof File && file.size > 0 ? await file.text() : String(formData.get("csv") ?? "");
+  const { valid, invalid, duplicates } = parseParticipantRows(parseCsv(text));
+  if (valid.length === 0) return go(back, "error", "No valid rows found. Each row needs a name and a valid email.");
+  if (valid.length > 1000) return go(back, "error", "Please import at most 1000 rows at a time.");
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase.from("event_registrations").select("email").eq("event_id", eventId);
+  const have = new Set((existing ?? []).map((e: { email: string }) => e.email.toLowerCase()));
+  const fresh = valid.filter((r) => !have.has(r.email));
+  const already = valid.length - fresh.length;
+  if (fresh.length === 0) return go(back, "error", `Everyone in that file is already registered (${already}).`);
+
+  const { error } = await supabase.from("event_registrations").insert(
+    fresh.map((r) => ({ ...r, event_id: eventId, ticket_code: newTicketCode(), status: "confirmed" })),
+  );
+  if (error) return go(back, "error", "Import failed — nothing was added.");
+  revalidatePath(back);
+  const notes = [already && `${already} already registered`, duplicates && `${duplicates} duplicate`, invalid && `${invalid} invalid`].filter(Boolean).join(", ");
+  return go(back, "ok", `Imported ${fresh.length} participants.${notes ? ` Skipped: ${notes}.` : ""}`);
 }
 
 /* ---------------------------------------------------------------- members */

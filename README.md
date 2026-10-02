@@ -16,13 +16,21 @@ Participant data (names, emails, phones) is protected by Postgres row-level secu
 
 ### 1. Supabase
 1. Create a project at supabase.com.
-2. **SQL Editor** → run `supabase/schema.sql`, then `supabase/seed_clubs.sql` (20 clubs).
-   Optional: `supabase/seed_demo_data.sql` fills a year of fake events/participants so dashboards aren't empty (delete later with `delete from events where title like '[demo]%';`).
+2. **SQL Editor** → run `supabase/schema.sql`, then `supabase/event_ops.sql` (waitlist, QR tickets, race-safe capacity), then `supabase/seed_real_clubs.sql` (the 15 real NHCE clubs with logos, links and descriptions; replaces the old generic starter clubs).
+   Optional simulation: `supabase/seed_real_demo.sql` adds each club's real events (where its website lists any), its real student-council roster, announcements, and simulated sign-ups / attendance / feedback so the dashboards have data. Safe to re-run. `supabase/seed_big_event.sql` adds one 180-person event for trying the check-in console.
+   Both seed files are generated: edit `data/clubs.json`, run `node scripts/build-seed.mjs`. To pull fresh content from the club websites, run `node scripts/scrape-clubs.mjs` first (refreshes social links and reports new text on each page).
 3. **Authentication → Providers → Email**: turn **off** "Allow new users to sign up" (the admin creates lead accounts).
 4. **Create the admin account**: Authentication → Users → *Add user* (email + password, tick auto-confirm). Then in the SQL editor:
    ```sql
    update public.profiles set role = 'super_admin' where email = 'YOUR-ADMIN-EMAIL';
    ```
+
+### 1b. Club accounts
+After the admin account exists and `.env.local` has your Supabase keys, create one lead login per club:
+```bash
+node --env-file=.env.local scripts/create-club-accounts.mjs --domain=yourcollege.edu
+```
+Each lead gets `<club>@yourcollege.edu` (e.g. `stem@`, `techforge@`, `cseh@`, `mad@`) with a random password, assigned to their club. Credentials are written to `club-accounts.csv` (git-ignored) — hand each lead theirs; they can change it under *Account*. Re-running keeps existing accounts; `--reset` issues new passwords.
 
 ### 2. Local run
 ```bash
@@ -48,3 +56,11 @@ npm run dev                    # http://localhost:3000
 - Built-in registration prevents duplicate emails per event and respects capacity / "registration open".
 - Built-in feedback opens when the event starts; one response per email per event.
 - Metrics count only *published* events; cancelled and draft events are excluded.
+
+## Running an event (100–200+ people)
+- **Registration** gives every attendee a QR ticket page (`/ticket/<code>`). When seats run out, sign-ups go on a **waitlist** and are promoted automatically when someone is removed or capacity is raised. Seat counting is serialised in Postgres, so a flood of simultaneous sign-ups can't oversell.
+- **Import** an existing Google Forms CSV from the event page (columns matched by header).
+- **Check-in console** (`/dashboard/clubs/<club>/events/<id>/checkin`): live counter, instant search across name / roll no / phone / email / ticket code, one-tap check-in with undo, **QR scanning** with the phone camera, walk-ins without an email, and auto-sync every 8 s so several volunteers can work in parallel. Pressing Enter checks in a lone search match.
+- **Participants table**: filter by status / department / year, sort, paginate, bulk mark present / not arrived / promote / remove, copy emails, export the filtered list.
+- **Print**: attendance sheet (paper backup) and name badges with QR codes.
+- **Insights**: seats filled, registrations per day, arrivals per 15 minutes, department and year breakdown.

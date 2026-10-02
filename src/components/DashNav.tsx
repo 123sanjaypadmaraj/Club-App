@@ -13,7 +13,7 @@ export function DashNav({ isAdmin }: { isAdmin: boolean }) {
     : [{ href: "/dashboard", label: "My clubs", match: (p: string) => p.startsWith("/dashboard") && !p.startsWith("/dashboard/account") }];
   items.push({ href: "/dashboard/account", label: "Account", match: (p: string) => p.startsWith("/dashboard/account") });
   return (
-    <nav className="mb-6 flex gap-1 rounded-lg border border-line bg-surface p-1 text-sm">
+    <nav className="mb-6 flex gap-1 print:hidden rounded-lg border border-line bg-surface p-1 text-sm">
       {items.map((i) => (
         <Link key={i.href} href={i.href} className={`rounded-md px-3 py-1.5 font-medium ${i.match(path) ? "bg-brand text-brand-fg" : "text-muted hover:text-foreground"}`}>
           {i.label}

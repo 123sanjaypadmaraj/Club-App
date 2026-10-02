@@ -82,6 +82,9 @@ export type Registration = {
   year: number | null;
   phone: string | null;
   attended: boolean;
+  attended_at: string | null;
+  status: "confirmed" | "waitlisted";
+  ticket_code: string;
   registered_at: string;
 };
 

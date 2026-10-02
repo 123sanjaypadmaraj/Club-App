@@ -15,7 +15,7 @@ export function ClubTabs({ slug }: { slug: string }) {
   const base = `/dashboard/clubs/${slug}`;
   const current = path === base ? "" : path.slice(base.length + 1).split("/")[0];
   return (
-    <nav className="mb-6 flex gap-1 overflow-x-auto border-b border-line">
+    <nav className="mb-6 flex gap-1 print:hidden overflow-x-auto border-b border-line">
       {TABS.map((t) => (
         <Link
           key={t.key}

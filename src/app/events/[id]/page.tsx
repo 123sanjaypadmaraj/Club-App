@@ -16,8 +16,12 @@ async function load(id: string) {
   const supabase = await createClient();
   const { data } = await supabase.from("events").select("*, clubs(*)").eq("id", id).maybeSingle();
   if (!data) return null;
-  const { data: c } = await supabase.from("event_public_counts").select("registrations").eq("event_id", id).maybeSingle();
-  return { event: data as ClubEvent & { clubs: Club }, registered: (c?.registrations as number | undefined) ?? 0 };
+  const { data: c } = await supabase.from("event_public_counts").select("registrations, waitlisted").eq("event_id", id).maybeSingle();
+  return {
+    event: data as ClubEvent & { clubs: Club },
+    registered: (c?.registrations as number | undefined) ?? 0,
+    waitlisted: (c?.waitlisted as number | undefined) ?? 0,
+  };
 }
 
 export async function generateMetadata({ params }: PageProps<"/events/[id]">): Promise<Metadata> {
@@ -34,14 +38,14 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
   const sp = await searchParams;
   const r = await load(id);
   if (!r) notFound();
-  const { event, registered } = r;
+  const { event, registered, waitlisted } = r;
   const club = event.clubs;
 
   const started = new Date(event.starts_at) <= new Date();
   const over = new Date(event.ends_at ?? event.starts_at) <= new Date();
   const full = event.capacity != null && registered >= event.capacity;
   const cancelled = event.status === "cancelled";
-  const canRegister = event.status === "published" && event.registration_open && !over && !full;
+  const canRegister = event.status === "published" && event.registration_open && !over; // a full event waitlists
   const register = registerForEvent.bind(null, event.id);
 
   return (
@@ -63,7 +67,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
           {event.venue && <div><dt className="inline text-muted">Where: </dt><dd className="inline">{event.venue}</dd></div>}
           <div>
             <dt className="inline text-muted">Registered: </dt>
-            <dd className="inline">{registered}{event.capacity ? ` / ${event.capacity}` : ""}{full ? " (full)" : ""}</dd>
+            <dd className="inline">{registered}{event.capacity ? ` / ${event.capacity}` : ""}{full ? " (full)" : ""}{waitlisted ? ` · ${waitlisted} on waitlist` : ""}</dd>
           </div>
         </dl>
         {event.status === "published" && (
@@ -74,10 +78,13 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
 
       {!cancelled && !over && (
         <section className="card space-y-4">
-          <h2 className="text-lg font-semibold">Register</h2>
+          <h2 className="text-lg font-semibold">{full ? "Join the waitlist" : "Register"}</h2>
+          {full && (
+            <p className="text-sm text-muted">All seats are taken. Join the waitlist — if someone cancels you move up automatically and your ticket turns confirmed.</p>
+          )}
           {event.registration_url && event.registration_open && <div><ExtLink href={event.registration_url}>Open registration form</ExtLink></div>}
           {!canRegister ? (
-            <p className="text-sm text-muted">{full ? "This event is full." : "Registration is closed."}</p>
+            <p className="text-sm text-muted">Registration is closed.</p>
           ) : (
             <details open={!event.registration_url} className="group">
               {event.registration_url && <summary className="cursor-pointer text-sm text-brand">Or register directly here</summary>}
@@ -93,7 +100,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
                   </select>
                 </Field>
                 <Field label="Phone"><input name="phone" type="tel" maxLength={20} className="input" autoComplete="tel" /></Field>
-                <div className="sm:col-span-2"><SubmitButton pendingText="Registering…">Register</SubmitButton></div>
+                <div className="sm:col-span-2"><SubmitButton pendingText={full ? "Joining…" : "Registering…"}>{full ? "Join waitlist" : "Register"}</SubmitButton></div>
               </form>
             </details>
           )}

@@ -1,6 +1,23 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+/** Club logo in a fixed white tile (logos vary in shape); falls back to the club's initials on its accent colour. */
+export function ClubLogo({ club, size = 48 }: { club: { name: string; logo_url: string | null; accent_color: string }; size?: number }) {
+  const box = { width: size, height: size };
+  if (!club.logo_url) {
+    const initials = club.name.split(/[\s&.]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+    return (
+      <span aria-hidden className="inline-flex shrink-0 items-center justify-center rounded-lg font-bold text-white" style={{ ...box, background: club.accent_color, fontSize: size / 2.6 }}>
+        {initials}
+      </span>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- small static logos; no optimisation needed
+    <img src={club.logo_url} alt={`${club.name} logo`} loading="lazy" className="shrink-0 rounded-lg bg-white object-contain p-0.5 ring-1 ring-black/10" style={box} />
+  );
+}
+
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">

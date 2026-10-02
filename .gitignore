@@ -42,3 +42,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# generated club-lead credentials — never commit
+/club-accounts.csv

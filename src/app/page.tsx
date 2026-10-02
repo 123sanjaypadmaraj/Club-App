@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { EventCard, type EventCardData } from "@/components/EventCard";
-import { Empty } from "@/components/ui";
+import { ClubLogo, Empty } from "@/components/ui";
 import type { Club } from "@/lib/types";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
@@ -72,7 +72,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {clubs.map((c) => (
               <Link key={c.id} href={`/clubs/${c.slug}`} className="card block transition hover:shadow-md" style={{ borderTop: `3px solid ${c.accent_color}` }}>
-                <span className="badge">{c.category}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="badge">{c.category}</span>
+                  <ClubLogo club={c} size={44} />
+                </div>
                 <h3 className="mt-2 font-semibold">{c.name}</h3>
                 <p className="mt-1 line-clamp-2 text-sm text-muted">{c.tagline ?? c.description}</p>
               </Link>

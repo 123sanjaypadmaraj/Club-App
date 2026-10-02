@@ -69,3 +69,22 @@ export function Stars({ value }: { value: number | null }) {
     </span>
   );
 }
+
+/** Compact column chart for a short time series (arrivals per 15 min, registrations per day). */
+export function MiniBars({ rows, label }: { rows: { label: string; value: number }[]; label: string }) {
+  const max = Math.max(1, ...rows.map((r) => r.value));
+  return (
+    <figure aria-label={label}>
+      <div className="flex h-28 items-end gap-1" role="img" aria-label={`${label}: ${rows.map((r) => `${r.label} ${r.value}`).join(", ")}`}>
+        {rows.map((r) => (
+          <div key={r.label} className="flex h-full min-w-1 flex-1 flex-col justify-end" title={`${r.label}: ${r.value}`}>
+            <div className="rounded-t bg-brand" style={{ height: `${Math.max(r.value ? 4 : 0, (r.value / max) * 100)}%` }} />
+          </div>
+        ))}
+      </div>
+      <figcaption className="mt-1 flex justify-between text-[10px] text-muted">
+        <span>{rows[0]?.label}</span><span>peak {max}</span><span>{rows[rows.length - 1]?.label}</span>
+      </figcaption>
+    </figure>
+  );
+}

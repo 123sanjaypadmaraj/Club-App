@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { EventCard, type EventCardData } from "@/components/EventCard";
-import { Empty, ExtLink } from "@/components/ui";
+import { ClubLogo, Empty, ExtLink } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
 import type { Announcement, Club } from "@/lib/types";
 
@@ -36,9 +36,14 @@ export default async function ClubPage({ params }: PageProps<"/clubs/[slug]">) {
   return (
     <div className="space-y-10">
       <header className="card" style={{ borderTop: `4px solid ${club.accent_color}` }}>
-        <span className="badge">{club.category}</span>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">{club.name}</h1>
-        {club.tagline && <p className="mt-1 text-lg text-muted">{club.tagline}</p>}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="badge">{club.category}</span>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">{club.name}</h1>
+            {club.tagline && <p className="mt-1 text-lg text-muted">{club.tagline}</p>}
+          </div>
+          <ClubLogo club={club} size={84} />
+        </div>
         {club.description && <p className="mt-4 max-w-3xl">{club.description}</p>}
         <dl className="mt-4 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
           {club.meeting_schedule && <div><dt className="inline text-muted">Meets: </dt><dd className="inline">{club.meeting_schedule}</dd></div>}

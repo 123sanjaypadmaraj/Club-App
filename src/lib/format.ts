@@ -38,3 +38,6 @@ export const int = (v: FormDataEntryValue | null): number | null => {
   const n = parseInt(String(v ?? ""), 10);
   return Number.isFinite(n) ? n : null;
 };
+
+export const fmtTime = (d: string | Date) =>
+  new Date(d).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", timeZone: tz });

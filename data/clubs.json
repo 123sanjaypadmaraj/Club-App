@@ -1,0 +1,946 @@
+{
+  "_source": "Scraped from https://newhorizonindia.edu/co-curricular/* (see scripts/scrape-clubs.mjs) plus the club logo folder. Fields marked simulated:true are demo programmes, not real events.",
+  "clubs": [
+    {
+      "slug": "aerobots",
+      "name": "Aerobots Club",
+      "category": "Technical",
+      "accent": "#0284c7",
+      "tagline": "Skybound Curiosity: Where Minds Soar in Aviation Elegance!",
+      "description": "Aerobots is NHCE's aviation and robotics club. It runs workshops and seminars, trains members in beginner and advanced robotics, hosts hackathons, and drives research initiatives in robotics and technology.",
+      "website": "https://newhorizonindia.edu/co-curricular/aerobots/",
+      "instagram": "https://www.instagram.com/aerobots_nhce",
+      "logo": "aerobots.jpg",
+      "popularity": 0.9,
+      "programs": [
+        {
+          "title": "Intro to Drone Flight & Aerodynamics",
+          "category": "Workshop",
+          "description": "Hands-on session on how fixed-wing aircraft and quadcopters fly, ending with a supervised flight demo."
+        },
+        {
+          "title": "Beginner Robotics Bootcamp",
+          "category": "Workshop",
+          "description": "Sensors, motors and microcontrollers from scratch — build and drive your first bot."
+        },
+        {
+          "title": "Aero Design Seminar",
+          "category": "Talk",
+          "description": "Seminar on airframe design, materials and propulsion for student aircraft."
+        },
+        {
+          "title": "Aerobots Hackathon",
+          "category": "Competition",
+          "description": "Build a working aerial or robotic prototype around a surprise problem statement."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Welcome to Aerobots",
+          "body": "Skybound Curiosity — join us for robotics training, hackathons and research initiatives. Sign up through our page.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "business-and-information-technology",
+      "name": "Business & Information Technology Club",
+      "category": "Business",
+      "accent": "#0f766e",
+      "tagline": "Empowering futures at the intersection of business and technology.",
+      "description": "The BIT Club organises educational workshops and seminars, hackathons and tech challenges, skill-development workshops (coding, data analysis, digital marketing, design thinking, project management), tech talks and webinars, and networking events linking students, faculty, alumni and industry.",
+      "website": "https://newhorizonindia.edu/co-curricular/business-and-information-technology/",
+      "instagram": "https://www.instagram.com/nhce_bitclub/",
+      "linkedin": "https://www.linkedin.com/in/bit-club-80a0592a0",
+      "logo": "bit.png",
+      "popularity": 0.9,
+      "programs": [
+        {
+          "title": "Digital Marketing Skill Workshop",
+          "category": "Workshop",
+          "description": "SEO, social campaigns and analytics for student projects and startups."
+        },
+        {
+          "title": "Design Thinking for Product Teams",
+          "category": "Workshop",
+          "description": "A hands-on design-thinking sprint: empathise, define, ideate, prototype."
+        },
+        {
+          "title": "Tech Talk: Technology in Modern Business",
+          "category": "Talk",
+          "description": "Guest speakers from business and technology on how tech is reshaping industries."
+        },
+        {
+          "title": "BIT Alumni Networking Evening",
+          "category": "Social",
+          "description": "Students, faculty, alumni and professionals meet for mentoring and connections."
+        },
+        {
+          "title": "BIT Tech Challenge",
+          "category": "Competition",
+          "description": "Team challenge combining a business case with a small technical build."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Skill-building workshops this semester",
+          "body": "Coding, data analysis, digital marketing, design thinking and project management — watch this page for dates.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "cybersecurity-and-ethical-hacking",
+      "name": "Cybersecurity & Ethical Hacking Club",
+      "category": "Technical",
+      "accent": "#6d28d9",
+      "tagline": "Detect. Decode. Decipher.",
+      "description": "The Cybersecurity and Ethical Hacking club of NHCE is a community of enthusiasts fostering knowledge and skills in cybersecurity: educating members about threats and best practices, promoting ethical hacking and responsible use of hacking skills, and raising awareness of cybercrime and cybersecurity law.",
+      "website": "https://newhorizonindia.edu/co-curricular/cybersecurity-and-ethical-hacking/",
+      "logo": "cseh-club.jpg",
+      "popularity": 1,
+      "programs": [
+        {
+          "title": "Ethical Hacking 101",
+          "category": "Workshop",
+          "description": "Recon, scanning and exploitation basics in a safe lab."
+        },
+        {
+          "title": "Capture The Flag: NHCE CTF",
+          "category": "Competition",
+          "description": "Jeopardy-style CTF covering web, crypto, forensics and reversing."
+        },
+        {
+          "title": "Cybercrime Awareness & Cyber Law Talk",
+          "category": "Talk",
+          "description": "Awareness session on cybercrime, phishing and the legal side of security."
+        },
+        {
+          "title": "Web App Security with OWASP Top 10",
+          "category": "Workshop",
+          "description": "Find and fix injection, XSS and auth flaws in a deliberately vulnerable app."
+        },
+        {
+          "title": "Password & Privacy Hygiene Drive",
+          "category": "Social",
+          "description": "Campus-wide drive on password managers, 2FA and safe browsing."
+        }
+      ],
+      "team": [
+        {
+          "name": "Tejhaasswwini",
+          "position": "President"
+        },
+        {
+          "name": "Aryaman Prajin",
+          "position": "Vice President"
+        },
+        {
+          "name": "S Harsha Bhat",
+          "position": "Secretary"
+        },
+        {
+          "name": "Suhas M H",
+          "position": "Treasurer"
+        },
+        {
+          "name": "Shashank H D",
+          "position": "Project Committee Chair"
+        },
+        {
+          "name": "Tushyankar",
+          "position": "Program Committee Chair"
+        },
+        {
+          "name": "Ashmith Maddala",
+          "position": "Marketing Committee Chair"
+        },
+        {
+          "name": "Ekanki",
+          "position": "Review Committee Chair"
+        },
+        {
+          "name": "Shubhoshish Roy",
+          "position": "Project Committee Vice Chair"
+        },
+        {
+          "name": "Shailesh J Kunder",
+          "position": "Program Committee Vice Chair"
+        },
+        {
+          "name": "Hemal",
+          "position": "Marketing Committee Vice Chair"
+        }
+      ],
+      "announcements": [
+        {
+          "title": "Cybersecurity club is recruiting",
+          "body": "We need passionate people to help run the most interesting cybersecurity events on campus. Register through our page.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "data-analytics",
+      "name": "Data Analytics Club",
+      "category": "Technical",
+      "accent": "#ea580c",
+      "tagline": "Transforming Data Desert into Oasis of Insights",
+      "description": "A student-run club that equips students with the analytical tools needed in today's business scenario, giving technical and theoretical know-how of in-demand analytics tools so NHCE students stand out.",
+      "website": "https://newhorizonindia.edu/co-curricular/data-analytics/",
+      "instagram": "https://www.instagram.com/data_analytics_club_nhce",
+      "logo": "data-analytics.jpg",
+      "popularity": 0.9,
+      "programs": [
+        {
+          "title": "Excel & Power BI for Beginners",
+          "category": "Workshop",
+          "description": "Clean data, build pivots and ship a first dashboard."
+        },
+        {
+          "title": "SQL for Analysts",
+          "category": "Workshop",
+          "description": "Joins, window functions and analytics queries on a real dataset."
+        },
+        {
+          "title": "Data Storytelling Talk",
+          "category": "Talk",
+          "description": "How analysts turn numbers into decisions."
+        },
+        {
+          "title": "Datathon",
+          "category": "Competition",
+          "description": "Team competition: explore a messy dataset and present insights."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Follow us for workshop dates",
+          "body": "Updates on analytics workshops and datathons are posted on our Instagram.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "ed-start-up",
+      "name": "Entrepreneurship Development & Start-Up Club",
+      "category": "Business",
+      "accent": "#4338ca",
+      "tagline": "Empowering Students to Innovate, Create, and Thrive in the Entrepreneurial World.",
+      "description": "Through awareness, support and resources, the club fosters a culture of entrepreneurship at NHCE, promoting sustainable solutions and igniting the passion for business.",
+      "website": "https://newhorizonindia.edu/co-curricular/ed-start-up/",
+      "instagram": "https://www.instagram.com/ed_startupclub",
+      "logo": "ed_start_up.png",
+      "popularity": 0.9,
+      "programs": [
+        {
+          "title": "Startup Ideation Workshop",
+          "category": "Workshop",
+          "description": "From problem to pitch: validate an idea in a day."
+        },
+        {
+          "title": "Founder Talk: From Campus to Company",
+          "category": "Talk",
+          "description": "A founder shares the first year of building a startup."
+        },
+        {
+          "title": "Pitch Day",
+          "category": "Competition",
+          "description": "Teams pitch to a panel of mentors for feedback and prizes."
+        },
+        {
+          "title": "Business Model Canvas Lab",
+          "category": "Workshop",
+          "description": "Build and stress-test a business model with mentors."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Welcome to the Start-Up Club",
+          "body": "Awareness, support and resources for student entrepreneurs.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "emsys",
+      "name": "EmSys Nex Gen",
+      "category": "Technical",
+      "accent": "#ca8a04",
+      "tagline": "Unlocking the power of connectivity with embedded systems: where technology meets possibility.",
+      "description": "EmSys Nex Gen is NHCE's embedded systems club — a community for students who want to build with microcontrollers, sensors and connected devices.",
+      "website": "https://newhorizonindia.edu/co-curricular/emsys/",
+      "instagram": "https://www.instagram.com/emsysnexgen.nhce",
+      "logo": null,
+      "popularity": 0.8,
+      "programs": [
+        {
+          "title": "Arduino & Sensors Bootcamp",
+          "category": "Workshop",
+          "description": "Wire up sensors and write firmware for a first embedded project."
+        },
+        {
+          "title": "IoT Build Night",
+          "category": "Workshop",
+          "description": "Connect a device to the cloud and visualise its data."
+        },
+        {
+          "title": "Embedded Careers Talk",
+          "category": "Talk",
+          "description": "Engineers on working in embedded and firmware roles."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Elevate your experience",
+          "body": "Register to join EmSys Nex Gen through our page.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "evolve-ai",
+      "name": "Evolve.AI",
+      "category": "Technical",
+      "accent": "#dc2626",
+      "tagline": "Explore. Empower. Evolve.",
+      "description": "Evolve.AI is NHCE's hub for cutting-edge AI events, activities and community — workshops, seminars, hackathons and competitions that foster creativity, collaboration and curiosity across all departments.",
+      "website": "https://newhorizonindia.edu/co-curricular/evolve-ai/",
+      "instagram": "https://www.instagram.com/evolve.ai_nhce/",
+      "logo": "evolve_ai.png",
+      "popularity": 1.1,
+      "programs": [
+        {
+          "title": "Machine Learning Foundations Workshop",
+          "category": "Workshop",
+          "description": "Train and evaluate your first models with scikit-learn."
+        },
+        {
+          "title": "Generative AI Seminar",
+          "category": "Talk",
+          "description": "How large language models work and where they are heading."
+        },
+        {
+          "title": "AI Hackathon",
+          "category": "Competition",
+          "description": "Build an AI-powered solution in a day."
+        },
+        {
+          "title": "Prompt Engineering Lab",
+          "category": "Workshop",
+          "description": "Practical prompting and evaluation for real tasks."
+        },
+        {
+          "title": "AI Paper Reading Circle",
+          "category": "Meeting",
+          "description": "Casual reading group: one paper, one discussion."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Join Evolve.AI",
+          "body": "Whether you're a seasoned AI enthusiast or just starting, there's a place for you. Explore membership options on our page.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "foss",
+      "name": "FOSS Club",
+      "category": "Technical",
+      "accent": "#1d4ed8",
+      "tagline": "Empower, Create, Contribute",
+      "description": "Empower your skills, unleash creativity, and contribute to a community of growth and innovation. Freshers and seasoned coders are equally welcome.",
+      "website": "https://newhorizonindia.edu/co-curricular/foss/",
+      "instagram": "https://www.instagram.com/_nhce_foss_club_official_",
+      "logo": "foss.jpg",
+      "popularity": 0.9,
+      "programs": [
+        {
+          "title": "Git & GitHub Workshop",
+          "category": "Workshop",
+          "description": "Branches, pull requests and your first open-source contribution."
+        },
+        {
+          "title": "Linux Install Fest",
+          "category": "Workshop",
+          "description": "Bring a laptop and leave with a working Linux setup."
+        },
+        {
+          "title": "Open Source Contribution Sprint",
+          "category": "Competition",
+          "description": "Pick an issue, send a patch, get it reviewed."
+        },
+        {
+          "title": "Why Open Source? Talk",
+          "category": "Talk",
+          "description": "Maintainers on careers and community in open source."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Everyone is welcome",
+          "body": "Freshman or seasoned coder — bring your enthusiasm and a readiness to learn.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "green-energy",
+      "name": "Green Energy Club",
+      "category": "Sustainability",
+      "accent": "#65a30d",
+      "tagline": "Let's empower a sustainable future together",
+      "description": "The Green Energy Club spreads awareness of sustainable technology and its impact on the environment, economy and society; advances education and research in green technologies and renewable energy; and champions projects and startups — through events, workshops, outreach, R&D and policy engagement.",
+      "website": "https://newhorizonindia.edu/co-curricular/green-energy/",
+      "logo": "greenenergy.jpg",
+      "popularity": 0.8,
+      "programs": [
+        {
+          "title": "Solar PV Basics Workshop",
+          "category": "Workshop",
+          "description": "Build and measure a small solar setup."
+        },
+        {
+          "title": "Sustainable Technology Guest Lecture",
+          "category": "Talk",
+          "description": "Guest lecture on renewable energy and green tech careers."
+        },
+        {
+          "title": "Campus Energy Audit",
+          "category": "Social",
+          "description": "Teams audit a campus building's electricity use and propose savings."
+        },
+        {
+          "title": "E-Waste Collection Drive",
+          "category": "Social",
+          "description": "Collection drive with responsible recycling partners."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Projects & initiatives open",
+          "body": "Have an idea in renewable energy, waste management or conservation? Pitch it to the club.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "healthxcel",
+      "name": "HealthXcel Club",
+      "category": "Health",
+      "accent": "#0d9488",
+      "tagline": "Engineering Precision. Healing Vision.",
+      "description": "HealthXcel is a nexus for people passionate about intertwining engineering and medical science: interdisciplinary collaboration, workshops with healthcare institutions, hands-on research and project-based learning, and networking and publication in healthcare engineering.",
+      "website": "https://newhorizonindia.edu/co-curricular/healthxcel/",
+      "instagram": "https://www.instagram.com/healthxcel.nhce/",
+      "logo": "healthexcel.png",
+      "popularity": 0.8,
+      "programs": [
+        {
+          "title": "Biomedical Instrumentation Workshop",
+          "category": "Workshop",
+          "description": "Read ECG and pulse signals with low-cost sensors."
+        },
+        {
+          "title": "Engineering in Medicine Seminar",
+          "category": "Talk",
+          "description": "Clinicians and engineers on building better health tech."
+        },
+        {
+          "title": "Health-Monitoring Hack Day",
+          "category": "Competition",
+          "description": "Prototype a health-monitoring idea in a day."
+        },
+        {
+          "title": "Medical Device Regulation 101",
+          "category": "Talk",
+          "description": "How medical products get tested and approved."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Welcome to Change",
+          "body": "Uniting forces for a healthy tomorrow — join HealthXcel.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "innovation",
+      "name": "Innovation Club",
+      "category": "Science & Innovation",
+      "accent": "#d97706",
+      "tagline": "Innovate. Ideate. Implement.",
+      "description": "The Innovation Club ignites passion, inspires collaboration and drives technological advancement by giving students a platform to explore, connect and showcase innovative projects that cross academic boundaries.",
+      "website": "https://newhorizonindia.edu/co-curricular/innovation/",
+      "instagram": "https://www.instagram.com/innovation.club.nhce",
+      "linkedin": "https://www.linkedin.com/in/innovation-club-nhce/",
+      "logo": "innovation.png",
+      "popularity": 0.9,
+      "programs": [
+        {
+          "title": "Idea-to-Prototype Workshop",
+          "category": "Workshop",
+          "description": "Turn a sketch into a working prototype in a weekend."
+        },
+        {
+          "title": "Innovation Showcase",
+          "category": "Competition",
+          "description": "Students demo projects to peers, faculty and industry."
+        },
+        {
+          "title": "New-Age Tech Seminar for Local Schools",
+          "category": "Talk",
+          "description": "Outreach seminar introducing school students to new technologies."
+        },
+        {
+          "title": "Industry Connect Meetup",
+          "category": "Social",
+          "description": "Meet researchers and companies working in different domains."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Get involved",
+          "body": "Innovate, collaborate and create — it's never too late to elevate!",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "mobile-app-development",
+      "name": "Mobile App Development Club",
+      "category": "Technical",
+      "accent": "#a21caf",
+      "tagline": "A community built on creativity and learning.",
+      "description": "MAD Club advocates for the education and creation of modern apps in the mobile space through small teams building real projects: hands-on workshops, hackathons and design sprints, with 150+ participants at every event. Active since 2023.",
+      "website": "https://newhorizonindia.edu/co-curricular/mobile-app-development/",
+      "instagram": "https://www.instagram.com/md_club_nhce/",
+      "logo": "mobile_app_dev_club.jpg",
+      "founded": 2023,
+      "popularity": 1.5,
+      "programs": [
+        {
+          "title": "Flutter Crash Course",
+          "category": "Workshop",
+          "description": "Ship a first cross-platform app in a day.",
+          "simulated": true
+        },
+        {
+          "title": "UI Design Sprint",
+          "category": "Workshop",
+          "description": "Figma to polished screens in one sitting.",
+          "simulated": true
+        }
+      ],
+      "events": [
+        {
+          "title": "Mindspark'23",
+          "description": "WikiWhiz · UI Clash · CodeMaze — a three-round tech event with 150+ participants.",
+          "category": "Competition",
+          "venue": "NHCE Campus",
+          "starts": "2023-10-14T10:00:00+05:30",
+          "hours": 6,
+          "capacity": 200,
+          "regs": 160,
+          "budget": 18000
+        },
+        {
+          "title": "InnoWave'24",
+          "description": "Trivial Battle · Pitchpoint — a two-round event with 150+ participants.",
+          "category": "Competition",
+          "venue": "NHCE Campus",
+          "starts": "2023-12-09T10:00:00+05:30",
+          "hours": 5,
+          "capacity": 200,
+          "regs": 155,
+          "budget": 15000
+        },
+        {
+          "title": "TechSync'24",
+          "description": "Visual Recall · Car Racing · Construction — a collaboration between four clubs across three rounds.",
+          "category": "Competition",
+          "venue": "NHCE Campus",
+          "starts": "2024-04-06T10:00:00+05:30",
+          "hours": 6,
+          "capacity": 200,
+          "regs": 150,
+          "budget": 20000
+        }
+      ],
+      "team": [
+        {
+          "name": "Chiranjeevi",
+          "position": "President"
+        },
+        {
+          "name": "Likitha",
+          "position": "Vice President"
+        }
+      ],
+      "announcements": [
+        {
+          "title": "New members welcome every semester",
+          "body": "Whether you're into design, code, or bringing ideas to life — there's a place for you in MAD Club. Register on our page and follow @md_club_nhce.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "robohorizon",
+      "name": "RoboHorizon Club",
+      "category": "Technical",
+      "accent": "#0369a1",
+      "tagline": "Igniting Robotic Dreams.",
+      "description": "RoboHorizon arranges workshops, seminars and industrial visits, trains members in basic and advanced robots, and promotes all-round development in robotics engineering.",
+      "website": "https://newhorizonindia.edu/co-curricular/robohorizon/",
+      "instagram": "https://www.instagram.com/robohorizon.nhce",
+      "logo": "robohorizon.jpg",
+      "popularity": 1,
+      "programs": [
+        {
+          "title": "Line-Follower Robot Workshop",
+          "category": "Workshop",
+          "description": "Build and tune a line-follower from kit parts."
+        },
+        {
+          "title": "Industrial Visit: Automation Plant",
+          "category": "Social",
+          "description": "Visit an automation facility to see industrial robots at work."
+        },
+        {
+          "title": "Robo Race",
+          "category": "Competition",
+          "description": "Inter-team race on a timed obstacle track."
+        },
+        {
+          "title": "Advanced Robotics Seminar",
+          "category": "Talk",
+          "description": "Kinematics, control and ROS for the curious."
+        }
+      ],
+      "team": [],
+      "announcements": [
+        {
+          "title": "Welcome to RoboHorizon",
+          "body": "A commitment to precision, a journey into robotic excellence.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "stem",
+      "name": "STEM Club",
+      "category": "Science & Innovation",
+      "accent": "#0891b2",
+      "tagline": "Science • Technology • Engineering • Mathematics",
+      "description": "The STEM Club at New Horizon College of Engineering is a creative hub where innovation meets exploration — workshops, hackathons, idea-blitz competitions, coding games and maker projects, plus mega-events like Synapse '25 and signature formats like Builder's Asylum, Traffic 360 and E-Wasted.",
+      "website": "https://newhorizonindia.edu/co-curricular/stem/",
+      "instagram": "https://www.instagram.com/stemclubnhce",
+      "linkedin": "http://www.linkedin.com/in/stem-club-nhce-34aa14397",
+      "logo": "stem.png",
+      "popularity": 1.4,
+      "faculty": "Dr. Rakesh C (Co-Curricular Club Head)",
+      "programs": [
+        {
+          "title": "Builder's Asylum",
+          "category": "Competition",
+          "description": "Signature build challenge: prototype under pressure.",
+          "simulated": true
+        },
+        {
+          "title": "Traffic 360",
+          "category": "Competition",
+          "description": "Signature event on solving urban traffic problems with tech.",
+          "simulated": true
+        },
+        {
+          "title": "E-Wasted",
+          "category": "Competition",
+          "description": "Signature event turning e-waste into working builds.",
+          "simulated": true
+        }
+      ],
+      "events": [
+        {
+          "title": "Synapse '25 — Event 1: Rescue the Lost Satellite",
+          "description": "An intense, space-themed challenge where participants decode signals, solve clues and collaborate to rescue a lost satellite using logic and STEM skills.",
+          "category": "Competition",
+          "venue": "NHCE Campus",
+          "starts": "2025-09-12T10:00:00+05:30",
+          "hours": 4,
+          "capacity": 120,
+          "regs": 118,
+          "budget": 12000
+        },
+        {
+          "title": "Synapse '25 — Event 2: Mysteries of the Universe",
+          "description": "A debate-style event exploring fascinating mysteries of the universe, blending scientific reasoning with imagination and passionate discussion.",
+          "category": "Talk",
+          "venue": "NHCE Campus",
+          "starts": "2025-09-13T10:00:00+05:30",
+          "hours": 3,
+          "capacity": 100,
+          "regs": 92,
+          "budget": 8000
+        },
+        {
+          "title": "Break Out The Code",
+          "description": "A problem-solving event testing logical reasoning, teamwork and mathematical aptitude.",
+          "category": "Competition",
+          "venue": "NHCE Campus",
+          "starts": "2025-10-18T10:00:00+05:30",
+          "hours": 3,
+          "capacity": 100,
+          "regs": 96,
+          "budget": 7000
+        },
+        {
+          "title": "E = MC²: Quiz & Innovation Expo",
+          "description": "A quiz competition along with an Innovation Expo bringing together innovation, intellect and scientific curiosity.",
+          "category": "Competition",
+          "venue": "NHCE Campus",
+          "starts": "2025-11-22T10:00:00+05:30",
+          "hours": 5,
+          "capacity": 150,
+          "regs": 134,
+          "budget": 15000
+        },
+        {
+          "title": "Mathrubasha Diwas",
+          "description": "A vibrant showcase of culture and confidence, where participants display diverse talents across art, science and expression.",
+          "category": "Social",
+          "venue": "NHCE Campus",
+          "starts": "2026-02-21T11:00:00+05:30",
+          "hours": 3,
+          "capacity": 150,
+          "regs": 110,
+          "budget": 6000
+        },
+        {
+          "title": "STEM X Borderland",
+          "description": "An immersive event inspired by Alice in Borderland, blending strategic challenges with hands-on STEM learning.",
+          "category": "Competition",
+          "venue": "NHCE Campus",
+          "starts": "2026-03-14T10:00:00+05:30",
+          "hours": 5,
+          "capacity": 120,
+          "regs": 120,
+          "budget": 14000
+        },
+        {
+          "title": "Fresher's Stage",
+          "description": "A showcase of creativity and confidence where freshers display diverse talents.",
+          "category": "Social",
+          "venue": "NHCE Auditorium",
+          "starts": "2025-10-04T14:00:00+05:30",
+          "hours": 3,
+          "capacity": 200,
+          "regs": 150,
+          "budget": 9000
+        }
+      ],
+      "team": [
+        {
+          "name": "Navaneeth Krishnan",
+          "position": "President"
+        },
+        {
+          "name": "M L Pratyusha",
+          "position": "Vice President"
+        },
+        {
+          "name": "Sahasra Amineni",
+          "position": "Secretary"
+        },
+        {
+          "name": "Mohammed Faidh",
+          "position": "Treasurer"
+        },
+        {
+          "name": "Prarthana Krishnamurthy",
+          "position": "Program Chair"
+        },
+        {
+          "name": "Kenneth Joshua",
+          "position": "Program Vice Chair"
+        },
+        {
+          "name": "Jhanvi Chenji",
+          "position": "Project Chair"
+        },
+        {
+          "name": "Kemisetti Hemachandra",
+          "position": "Project Vice Chair"
+        },
+        {
+          "name": "Himavarshini M",
+          "position": "Marketing Chair"
+        },
+        {
+          "name": "Chintalapati Hasini",
+          "position": "Marketing Vice Chair"
+        },
+        {
+          "name": "Sanjay Padmaraj",
+          "position": "Review Chair"
+        }
+      ],
+      "announcements": [
+        {
+          "title": "Investiture Ceremony 2025-26",
+          "body": "Student leaders of all co-curricular clubs for 2025-26 were recognised at the Investiture Ceremony.",
+          "pinned": false
+        },
+        {
+          "title": "Welcome to the STEM Club",
+          "body": "Learn by doing, network, showcase your talent and build career-ready skills. See All Events for inspiration.",
+          "pinned": true
+        }
+      ]
+    },
+    {
+      "slug": "tech-forge-club",
+      "name": "Tech Forge Club",
+      "category": "Technical",
+      "accent": "#ea580c",
+      "tagline": "Driven by Tech »  Code ✦ Innovate ✦ Automate",
+      "description": "Tech Forge is NHCE's co-curricular technical club (est. 2022): events, hackathons, seminars and workshops across AI & ML, web & app, cybersecurity, cloud, IoT & robotics — plus outreach like Helping Hands and A Day of Giving, and the flagship fest TECHFORGE '26.",
+      "website": "https://newhorizonindia.edu/co-curricular/tech-forge-club/",
+      "instagram": "https://www.instagram.com/techforge_nhce",
+      "logo": "techforgeclub.jpg",
+      "founded": 2022,
+      "popularity": 1.5,
+      "programs": [
+        {
+          "title": "Full-Stack Weekend Bootcamp",
+          "category": "Workshop",
+          "description": "Weekend deep-dive into full-stack development.",
+          "simulated": true
+        },
+        {
+          "title": "Cloud & DevOps Workshop",
+          "category": "Workshop",
+          "description": "Deploy an app with CI/CD on a cloud platform.",
+          "simulated": true
+        },
+        {
+          "title": "Industry Guest Lecture",
+          "category": "Talk",
+          "description": "Industry engineers decode the technologies of tomorrow.",
+          "simulated": true
+        }
+      ],
+      "events": [
+        {
+          "title": "A Day of Giving",
+          "description": "A day of service at Sparsha Trust, Mathikere — Tech Forge takes its energy off-campus.",
+          "category": "Social",
+          "venue": "Sparsha Trust, Mathikere",
+          "starts": "2023-05-20T10:00:00+05:30",
+          "hours": 5,
+          "capacity": 60,
+          "regs": 48,
+          "budget": 8000
+        },
+        {
+          "title": "Helping Hands",
+          "description": "Outreach programme: Tech Forge members step beyond campus to give, teach and uplift the community.",
+          "category": "Social",
+          "venue": "Community outreach",
+          "starts": "2024-05-18T10:00:00+05:30",
+          "hours": 5,
+          "capacity": 80,
+          "regs": 72,
+          "budget": 12000
+        },
+        {
+          "title": "Kratos '24 — NHCE Team",
+          "description": "Tech Forge members represent NHCE at the inter-collegiate tech fest Kratos '24.",
+          "category": "Competition",
+          "venue": "Inter-college fest",
+          "starts": "2024-10-12T09:00:00+05:30",
+          "hours": 8,
+          "capacity": 40,
+          "regs": 34,
+          "budget": 10000
+        },
+        {
+          "title": "TECHFORGE '26",
+          "description": "The flagship national-level tech fest — hackathons, coding arenas, robotics battles, tech quizzes and keynotes. Code. Innovate. Automate.",
+          "category": "Competition",
+          "venue": "NHCE Campus",
+          "starts": "2026-03-20T09:00:00+05:30",
+          "hours": 9,
+          "capacity": 400,
+          "regs": 380,
+          "budget": 60000
+        }
+      ],
+      "team": [
+        {
+          "name": "Priyanka",
+          "position": "President"
+        },
+        {
+          "name": "Gauri B Nair",
+          "position": "Vice President"
+        },
+        {
+          "name": "Ritisha",
+          "position": "Secretary"
+        },
+        {
+          "name": "Ishmita Menon",
+          "position": "Treasurer"
+        },
+        {
+          "name": "Abbas",
+          "position": "Program Chair"
+        },
+        {
+          "name": "Rohith",
+          "position": "Marketing Chair"
+        },
+        {
+          "name": "Prem",
+          "position": "Project Chair"
+        },
+        {
+          "name": "Rishima",
+          "position": "Review Chair"
+        },
+        {
+          "name": "Prasad",
+          "position": "Program Vice Chair"
+        },
+        {
+          "name": "Praneeth",
+          "position": "Marketing Vice Chair"
+        },
+        {
+          "name": "Abhay",
+          "position": "Project Vice Chair"
+        }
+      ],
+      "announcements": [
+        {
+          "title": "Join 200+ builders, breakers and creators",
+          "body": "Open to all NHCE students — no experience needed, just bring the fire. DM @techforge_nhce.",
+          "pinned": true
+        }
+      ]
+    }
+  ]
+}

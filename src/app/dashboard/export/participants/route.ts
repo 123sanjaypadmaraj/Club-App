@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getManagedClubs, getProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { csvResponse, toCsv } from "@/lib/csv";
+import { displayEmail } from "@/lib/participants";
 import type { Registration } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
@@ -17,13 +18,16 @@ export async function GET(req: NextRequest) {
   const { data } = await supabase.from("event_registrations").select("*").eq("event_id", eventId).order("registered_at");
   const rows = ((data as Registration[]) ?? []).map((r) => ({
     Name: r.full_name,
-    Email: r.email,
+    Email: displayEmail(r.email),
     "Roll no": r.roll_no,
     Department: r.department,
     Year: r.year,
     Phone: r.phone,
+    Status: r.status,
+    Ticket: r.ticket_code,
     Attended: r.attended ? "yes" : "no",
+    "Checked in at": r.attended_at,
     "Registered at": r.registered_at,
   }));
-  return csvResponse(`participants-${event.title}.csv`, toCsv(rows, ["Name", "Email", "Roll no", "Department", "Year", "Phone", "Attended", "Registered at"]));
+  return csvResponse(`participants-${event.title}.csv`, toCsv(rows, ["Name", "Email", "Roll no", "Department", "Year", "Phone", "Status", "Ticket", "Attended", "Checked in at", "Registered at"]));
 }

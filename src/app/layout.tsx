@@ -19,7 +19,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
+        <header className="sticky top-0 z-20 print:hidden border-b border-line bg-surface/90 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
             <Link href="/" className="text-lg font-bold tracking-tight">
               Club<span className="text-brand">Hub</span>
@@ -45,7 +45,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
-        <footer className="border-t border-line py-6 text-center text-xs text-muted">Club Hub · co-curricular clubs portal</footer>
+        <footer className="border-t border-line py-6 print:hidden text-center text-xs text-muted">Club Hub · co-curricular clubs portal</footer>
       </body>
     </html>
   );
