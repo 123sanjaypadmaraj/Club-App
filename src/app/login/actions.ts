@@ -2,14 +2,15 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { loginEmail } from "@/lib/username";
 
 export async function signIn(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
+  const email = loginEmail(String(formData.get("username") ?? ""));
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "/dashboard");
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) redirect(`/login?error=${encodeURIComponent("Invalid email or password.")}`);
+  if (error) redirect(`/login?error=${encodeURIComponent("Invalid username or password.")}`);
   // only allow same-site relative redirects
   redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard");
 }

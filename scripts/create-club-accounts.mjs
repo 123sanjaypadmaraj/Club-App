@@ -1,7 +1,8 @@
 // Creates one club-lead login per club in data/clubs.json and assigns it to that club.
-//   node --env-file=.env.local scripts/create-club-accounts.mjs [--domain=yourcollege.edu] [--reset]
+//   node --env-file=.env.local scripts/create-club-accounts.mjs [--reset]
 // Needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local, and seed_real_clubs.sql already run.
-//   Email    : <club-slug-short>@<domain>   (default domain: clubhub.example.com — pass --domain with a real one)
+//   Username : short club name (stem, techforge, cseh …). Supabase needs an email, so it is stored as <username>@clubhub.example.com
+//              (same mapping as src/lib/username.ts); nobody ever types that.
 //   Password : random, written to club-accounts.csv (git-ignored). Hand each lead theirs; they can change it under Account.
 //   Re-runs  : existing accounts are kept and only (re)assigned; add --reset to issue fresh passwords for them too.
 import { randomBytes } from "node:crypto";
@@ -12,7 +13,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const args = Object.fromEntries(process.argv.slice(2).map((a) => { const [k, v] = a.replace(/^--/, "").split("="); return [k, v ?? true]; }));
-const domain = String(args.domain ?? "clubhub.example.com").replace(/^@/, "");
+const domain = "clubhub.example.com"; // keep in sync with src/lib/username.ts
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) { console.error("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local (run with --env-file=.env.local)."); process.exit(1); }
@@ -24,6 +25,7 @@ const { clubs } = JSON.parse(readFileSync(join(root, "data/clubs.json"), "utf8")
 const SHORT = {
   "business-and-information-technology": "bit", "cybersecurity-and-ethical-hacking": "cseh",
   "mobile-app-development": "mad", "tech-forge-club": "techforge", "green-energy": "greenenergy",
+  "data-analytics": "dataanalytics", "ed-start-up": "edstartup", "evolve-ai": "evolveai",
 };
 const password = () => randomBytes(9).toString("base64url"); // 12 chars
 
@@ -38,7 +40,7 @@ async function findUser(email) {
   return null;
 }
 
-const rows = [["club", "slug", "email", "password"]];
+const rows = [["club", "username", "password"]];
 for (const c of clubs) {
   const { data: club } = await sb.from("clubs").select("id").eq("slug", c.slug).maybeSingle();
   if (!club) { console.warn(`! ${c.slug}: club not in the database — run supabase/seed_real_clubs.sql first`); continue; }
@@ -60,8 +62,8 @@ for (const c of clubs) {
   await sb.from("profiles").update({ full_name: fullName }).eq("id", user.id);
   const { error } = await sb.from("club_leads").upsert({ club_id: club.id, user_id: user.id });
   if (error) { console.warn(`! ${c.slug}: could not assign lead — ${error.message}`); continue; }
-  rows.push([c.name, c.slug, email, pw]);
-  console.log(`✓ ${c.name.padEnd(48)} ${email}`);
+  rows.push([c.name, email.split("@")[0], pw]);
+  console.log(`✓ ${c.name.padEnd(48)} ${email.split("@")[0]}`);
 }
 
 const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n") + "\n";

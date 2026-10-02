@@ -17,8 +17,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <Notice error={typeof sp.error === "string" ? sp.error : undefined} />
       <form action={signIn} className="card space-y-4">
         <input type="hidden" name="next" value={next} />
-        <Field label="Email">
-          <input name="email" type="email" required autoComplete="email" className="input" />
+        <Field label="Username">
+          <input name="username" type="text" required autoComplete="username" autoCapitalize="none" spellCheck={false} className="input" />
         </Field>
         <Field label="Password">
           <input name="password" type="password" required autoComplete="current-password" className="input" />
