@@ -24,13 +24,16 @@ export default async function ClubPage({ params }: PageProps<"/clubs/[slug]">) {
 
   const select = "id, title, category, venue, starts_at, clubs(name, slug, accent_color)";
   const now = new Date().toISOString();
-  const [{ data: up }, { data: past }, { data: ann }] = await Promise.all([
+  const [{ data: up }, { data: past }, { data: ann }, { data: running }] = await Promise.all([
     supabase.from("events").select(select).eq("club_id", club.id).eq("status", "published").gte("starts_at", now).order("starts_at"),
     supabase.from("events").select(select).eq("club_id", club.id).eq("status", "published").lt("starts_at", now).order("starts_at", { ascending: false }).limit(12),
     supabase.from("announcements").select("*").eq("club_id", club.id).order("pinned", { ascending: false }).order("created_at", { ascending: false }).limit(5),
+    supabase.from("events").select(select).eq("club_id", club.id).eq("status", "published").lt("starts_at", now).gt("ends_at", now).order("starts_at"),
   ]);
+  const live = (running ?? []) as unknown as EventCardData[];
+  const liveIds = new Set(live.map((e) => e.id));
   const upcoming = (up ?? []) as unknown as EventCardData[];
-  const earlier = (past ?? []) as unknown as EventCardData[];
+  const earlier = ((past ?? []) as unknown as EventCardData[]).filter((e) => !liveIds.has(e.id));
   const announcements = (ann as Announcement[]) ?? [];
 
   return (
@@ -79,9 +82,13 @@ export default async function ClubPage({ params }: PageProps<"/clubs/[slug]">) {
 
       <section>
         <h2 className="mb-3 border-l-4 border-fuchsia-500 pl-3 text-lg font-semibold">Upcoming events</h2>
-        {upcoming.length === 0 ? <Empty>No upcoming events.</Empty> : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{upcoming.map((e) => <EventCard key={e.id} e={e} showClub={false} />)}</div>
+        {upcoming.length + live.length === 0 ? <Empty>No upcoming events.</Empty> : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {live.map((e) => <EventCard key={e.id} e={e} showClub={false} live />)}
+            {upcoming.map((e) => <EventCard key={e.id} e={e} showClub={false} />)}
+          </div>
         )}
+        <p className="mt-3 text-sm"><a href={`/clubs/${club.slug}/calendar`} className="text-brand hover:underline">Subscribe to calendar</a></p>
       </section>
 
       {earlier.length > 0 && (

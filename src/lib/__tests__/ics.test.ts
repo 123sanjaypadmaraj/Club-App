@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eventToIcs, foldLine } from "@/lib/ics";
+import { eventToIcs, eventsToIcs, foldLine } from "@/lib/ics";
 
 const base = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -37,5 +37,22 @@ describe("foldLine", () => {
     expect(parts.length).toBeGreaterThan(1);
     expect(parts.every((p, i) => Buffer.byteLength(i ? p.slice(1) : p) <= (i ? 74 : 75))).toBe(true);
     expect(parts.map((p, i) => (i ? p.slice(1) : p)).join("")).toBe(line);
+  });
+});
+
+describe("eventsToIcs", () => {
+  const mk = (id: string) => ({ id, title: `T${id}`, starts_at: "2026-11-01T10:00:00Z", ends_at: null, venue: null, description: null, url: `https://x.test/events/${id}` });
+  it("emits one calendar with a name and every event", () => {
+    const out = eventsToIcs([mk("a"), mk("b")], "Chess, Club", new Date("2026-10-04T00:00:00Z"));
+    expect(out.match(/BEGIN:VCALENDAR/g)).toHaveLength(1);
+    expect(out.match(/BEGIN:VEVENT/g)).toHaveLength(2);
+    expect(out).toContain("X-WR-CALNAME:Chess\\, Club");
+    expect(out).toContain("UID:a");
+    expect(out).toContain("UID:b");
+  });
+  it("is a valid empty calendar with no events", () => {
+    const out = eventsToIcs([], "X");
+    expect(out).not.toContain("BEGIN:VEVENT");
+    expect(out.endsWith("END:VCALENDAR\r\n")).toBe(true);
   });
 });

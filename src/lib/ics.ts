@@ -31,15 +31,11 @@ export type IcsEvent = {
   url: string;
 };
 
-export function eventToIcs(e: IcsEvent, now: Date = new Date()): string {
+function veventLines(e: IcsEvent, now: Date): string[] {
   const start = new Date(e.starts_at);
   const end = e.ends_at ? new Date(e.ends_at) : new Date(start.getTime() + 3600_000);
   const desc = [e.description, e.url].filter(Boolean).join("\n\n");
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Club Hub//Events//EN",
-    "CALSCALE:GREGORIAN",
+  return [
     "BEGIN:VEVENT",
     `UID:${e.id}`,
     `DTSTAMP:${utc(now)}`,
@@ -50,7 +46,23 @@ export function eventToIcs(e: IcsEvent, now: Date = new Date()): string {
     `DESCRIPTION:${escapeText(desc)}`,
     `URL:${e.url}`,
     "END:VEVENT",
-    "END:VCALENDAR",
   ];
-  return lines.map(foldLine).join("\r\n") + "\r\n";
+}
+
+const HEAD = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Club Hub//Events//EN", "CALSCALE:GREGORIAN"];
+
+const serialize = (lines: string[]) => lines.map(foldLine).join("\r\n") + "\r\n";
+
+export function eventToIcs(e: IcsEvent, now: Date = new Date()): string {
+  return serialize([...HEAD, ...veventLines(e, now), "END:VCALENDAR"]);
+}
+
+/** One VCALENDAR with many VEVENTs, for subscribing to a club's feed. */
+export function eventsToIcs(events: IcsEvent[], calName: string, now: Date = new Date()): string {
+  return serialize([
+    ...HEAD,
+    `X-WR-CALNAME:${escapeText(calName)}`,
+    ...events.flatMap((e) => veventLines(e, now)),
+    "END:VCALENDAR",
+  ]);
 }

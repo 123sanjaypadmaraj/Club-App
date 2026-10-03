@@ -59,6 +59,18 @@ Note: `club-hub/AGENTS.md` warns that this Next.js version has breaking changes;
 - [done] **Add schema.org Event structured data to public event pages**
   (Paths relative to the repo root.) Continues the SEO work: add a pure `eventJsonLd(event, club, origin)` to `src/lib/seo.ts` returning a schema.org `Event` object (`name`, `startDate`/`endDate` as ISO, `eventStatus` = `EventCancelled` for cancelled else `EventScheduled`, `eventAttendanceMode` Offline, `location` `{ "@type": "Place", name: venue }` only when venue is set, `description` truncated to ~300 chars, `organizer` `{ "@type": "Organization", name: club name, url: <origin>/clubs/<slug> when origin is set }`, `url` when origin is set, `offers` omitted). Render it in `src/app/events/[id]/page.tsx` as `<script type="application/ld+json">` with `JSON.stringify(...).replace(/</g, "\\u003c")` to prevent script breakout. Read the JSON-LD guide in `node_modules/next/dist/docs/` first if one exists. Unit-test the builder (cancelled status, missing venue, missing origin, `<` escaping helper if extracted).
 
+- [pending] **Enforce length limits on public registration and feedback input**
+  (Paths relative to the repo root.) The public forms have `maxLength` only in HTML. `registerForEvent`/`submitFeedback` in `src/app/actions.ts` accept any length, and RLS lets anon insert straight through the Supabase API, so someone can store megabyte-sized names or comments. Add a pure `clampFields`/`validateLengths` helper in `src/lib/` (limits: full_name 120, email 160, roll_no 40, department 80, phone 20, comment 2000) with unit tests. Both actions use it and reject over-long input with a friendly `?error=` message. Also append a re-runnable block to `supabase/event_ops.sql` that adds matching `check (char_length(col) <= N)` constraints on `event_registrations` and `event_feedback` (`drop constraint if exists` then `add constraint ... not valid`, so existing rows never block it), and note in the run log that the user must re-run that file in Supabase.
+
+- [done] **Show in-progress events as "Happening now" on public club pages**
+  (Paths relative to the repo root.) Autopilot run 5 fixed this on `/events`, but `src/app/clubs/[slug]/page.tsx` still splits on `starts_at` alone, so a running event drops into "Earlier events" as soon as it starts. Add `ends_at` to the select and query in-progress events (`starts_at < now`, `ends_at > now`), as `src/app/events/page.tsx` does. List them first under the upcoming heading with `EventCard`'s existing `live` flag, and leave them out of the past list. Events with a null `ends_at` keep their current behavior. Do not touch the dashboard events list page (user has uncommitted work there).
+
+- [done] **Add a subscribable per-club calendar feed**
+  (Paths relative to the repo root.) Students can add one event at a time via `.ics`, but they can't follow a club. Generalise `src/lib/ics.ts` by extracting the VEVENT lines into a helper and adding `eventsToIcs(events, calName, now)`, which emits one VCALENDAR with `X-WR-CALNAME` and N VEVENTs. Keep `eventToIcs` output byte-identical so the existing tests still pass, and add tests for the multi-event case. Add route `src/app/clubs/[slug]/calendar/route.ts` that returns the club's published events starting within the last 90 days or later (anon client, so RLS hides drafts), sends 404 for an unknown slug, and uses `text/calendar; charset=utf-8` with `Cache-Control: public, max-age=3600`. Link it from the club page as "Subscribe to calendar". Event URLs use `NEXT_PUBLIC_SITE_URL` when set, otherwise the request origin.
+
+- [done] **Add Dependabot config for npm and GitHub Actions**
+  (Paths relative to the repo root.) Nothing keeps `next`, `@supabase/*` or the CI actions patched. Add `.github/dependabot.yml` (version 2) with weekly `npm` updates for `/` (group minor/patch updates into one PR, `open-pull-requests-limit: 5`, ignore semver-major for `@types/node` because vitest@^3 was pinned around it per autopilot run 1) and weekly `github-actions` updates. Config only: run no install or audit commands.
+
 ## Run log
 
 ### 2026-10-01 — planner run (initial)
@@ -173,3 +185,19 @@ Note: `club-hub/AGENTS.md` warns that this Next.js version has breaking changes;
 - Done: ids (slug, eventId, regId, memberId, announcementId, userId, clubId) now passed to 21 `logActionError` calls in dashboard actions (createLead/createClub/changePassword have no safe id in scope and still log only the action); `/dashboard/export/feedback?club=<slug>` CSV route (401/403 checks like members export) linked from the club overview "Recent feedback" card; `eventJsonLd` + `jsonLdString` in `src/lib/seo.ts` (4 tests) rendered on published public event pages.
 - Checks: 62/62 tests pass, tsc clean, lint clean. Not run against a live app: the feedback export (join filter `events.club_id`) and the JSON-LD output need a manual look.
 - Not pushed (confirm with user). Next: cancel-own-registration (needs SQL applied in Supabase by the user); blocked items still need manual checks.
+
+### 2026-10-04 — planner run (eighth)
+- Surveyed: the full status file, README, `package.json`, `.gitignore`, the CI workflow, `git log --oneline -30` (one new commit since the last planner run, 839a967), the `src/` tree, `src/app/actions.ts`, the public club and event pages, `src/lib/ics.ts`, schema constraints in `supabase/schema.sql`/`event_ops.sql`, and `maxLength` usage. TODO/FIXME/XXX grep of `src`, `supabase` and `scripts`: none. The caller reports 62 tests passing and tsc and lint clean.
+- Added "length limits on public input": anon can insert unbounded strings via the actions or the Supabase API directly. Only HTML `maxLength` guards it, and the DB has no length checks.
+- Added "Happening now on club pages": the same bug run 5 fixed on `/events` still exists on `/clubs/[slug]`, and `EventCard` already supports `live`.
+- Added "per-club calendar feed": builds on the tested `.ics` builder and lets students follow a club instead of adding events one at a time.
+- Added "Dependabot config": no dependency update automation exists for a public-facing app on Next/Supabase.
+- Not added: anything touching `src/app/login/*`, the manage-event page, the dashboard events list or `globals.css` (user's uncommitted work), or the ticket page beyond the pending cancel task.
+- Not added: git-ignoring `.archify/` (still committed). That is a user decision, not a code task, and I noted it in run six.
+- Not added (still deferred, reasons unchanged): server-action/route tests with Supabase mocking, form spam protection/rate-limiting, a CSP, email notifications, and running `next build` in CI.
+
+### 2026-10-04 — autopilot run 9 (cron, every 15m)
+- Branch `autopilot/hardening-and-seo`; user's uncommitted login/manage-event work untouched.
+- Done: club page lists in-progress events first with the "Happening now" badge and drops them from Past; `eventsToIcs` (shared VEVENT helper, `eventToIcs` output unchanged) with 2 new tests, plus `/clubs/[slug]/calendar` feed route (published events from the last 90 days on, 404 for unknown slug, 1h cache) linked as "Subscribe to calendar"; `.github/dependabot.yml`.
+- Checks: 64/64 tests pass, tsc clean, lint clean. Routes and club page not exercised against a live app.
+- Not pushed (confirm with user). Next: "Enforce length limits on public input" (its SQL block must be re-run in Supabase by the user), then cancel-own-registration; blocked items still need manual checks.
