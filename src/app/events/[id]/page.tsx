@@ -6,6 +6,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { ExtLink, Field, Notice, TintBadge } from "@/components/ui";
 import { fmtDateTime } from "@/lib/format";
 import { eventShareDescription } from "@/lib/events";
+import { eventJsonLd, jsonLdString, siteOrigin } from "@/lib/seo";
 import { registerForEvent } from "@/app/actions";
 import type { Club, ClubEvent } from "@/lib/types";
 
@@ -50,6 +51,12 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      {event.status === "published" && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdString(eventJsonLd(event, club, siteOrigin(process.env.NEXT_PUBLIC_SITE_URL))) }}
+        />
+      )}
       <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
 
       <header className="card" style={{ borderTop: `4px solid ${club.accent_color}` }}>

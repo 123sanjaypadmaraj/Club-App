@@ -67,7 +67,10 @@ export default async function ClubOverview({ params, searchParams }: PageProps<"
           )}
         </section>
         <section className="card">
-          <h2 className="mb-3 font-semibold">Recent feedback</h2>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="font-semibold">Recent feedback</h2>
+            <a href={`/dashboard/export/feedback?club=${slug}`} className="text-xs text-brand hover:underline">Download all feedback (CSV)</a>
+          </div>
           {comments.length === 0 ? <Empty>No written feedback yet.</Empty> : (
             <ul className="space-y-3">
               {comments.map((c) => (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSitemap, eventInSitemapWindow, siteOrigin } from "../seo";
+import { buildSitemap, eventInSitemapWindow, eventJsonLd, jsonLdString, siteOrigin } from "../seo";
 
 const now = new Date("2026-10-04T00:00:00Z");
 
@@ -39,5 +39,34 @@ describe("buildSitemap", () => {
     expect(eventInSitemapWindow("2026-04-10T00:00:00Z", now)).toBe(true);
     expect(eventInSitemapWindow("2026-04-01T00:00:00Z", now)).toBe(false);
     expect(eventInSitemapWindow("garbage", now)).toBe(false);
+  });
+});
+
+describe("eventJsonLd", () => {
+  const club = { slug: "chess", name: "Chess Club" };
+  const base = { id: "e1", title: "Blitz", starts_at: "2026-11-01T10:00:00Z", ends_at: null, venue: null, description: null, status: "published" };
+  it("builds a scheduled event with origin", () => {
+    const o = eventJsonLd({ ...base, venue: "Hall A", ends_at: "2026-11-01T12:00:00Z" }, club, "https://x.test");
+    expect(o.eventStatus).toBe("https://schema.org/EventScheduled");
+    expect(o.location).toEqual({ "@type": "Place", name: "Hall A" });
+    expect(o.endDate).toBe("2026-11-01T12:00:00.000Z");
+    expect(o.url).toBe("https://x.test/events/e1");
+    expect(o.organizer).toEqual({ "@type": "Organization", name: "Chess Club", url: "https://x.test/clubs/chess" });
+  });
+  it("marks cancelled and omits venue/origin/description", () => {
+    const o = eventJsonLd({ ...base, status: "cancelled" }, club, null);
+    expect(o.eventStatus).toBe("https://schema.org/EventCancelled");
+    expect(o).not.toHaveProperty("location");
+    expect(o).not.toHaveProperty("url");
+    expect(o).not.toHaveProperty("description");
+    expect(o.organizer).toEqual({ "@type": "Organization", name: "Chess Club" });
+  });
+  it("truncates long descriptions", () => {
+    const o = eventJsonLd({ ...base, description: "a".repeat(500) }, club, null);
+    expect((o.description as string).length).toBe(300);
+  });
+  it("escapes < so data cannot close the script tag", () => {
+    expect(jsonLdString({ a: "</script><b>" })).not.toContain("<");
+    expect(JSON.parse(jsonLdString({ a: "</script>" }))).toEqual({ a: "</script>" });
   });
 });
