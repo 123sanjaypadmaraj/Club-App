@@ -74,11 +74,17 @@ Note: `club-hub/AGENTS.md` warns that this Next.js version has breaking changes;
 - [done] **Show in-progress events on the home page's "Upcoming events"**
   (Paths relative to the repo root.) `src/app/page.tsx` still selects only `starts_at >= now` (limit 6), so a running event disappears from the landing page the moment it starts. This is the same bug runs 5 and 9 fixed on `/events` and `/clubs/[slug]`. Add `ends_at` to the select, add a parallel query for published events with `starts_at < now` and `ends_at > now`, list those first, and pass `EventCard`'s existing `live` flag (follow `src/app/events/page.tsx`). Keep at most 6 cards in total. Events with a null `ends_at` keep their current behavior. Done when tsc, lint and tests pass.
 
-- [pending] **Add a campus-wide subscribable calendar feed**
+- [done] **Add a campus-wide subscribable calendar feed**
   (Paths relative to the repo root.) Students can subscribe to one club (`/clubs/<slug>/calendar`) but not to everything. Add `src/app/events/calendar/route.ts`, modeled on the club feed route: published events of active clubs from the last 90 days onward, limit 500, `eventsToIcs(..., "Club Hub events")`, the same headers and origin logic. Honor an optional `?category=` through `pickFilter(…, EVENT_CATEGORIES)` and ignore unknown values. Prefix each SUMMARY with the club name (`"<Club>: <title>"`) by mapping titles before calling `eventsToIcs`, so the shared ICS builder is not changed. Link it from `src/app/events/page.tsx` as "Subscribe to calendar" next to the filters, carrying the current `category` when one is set. The static `calendar` segment takes precedence over `[id]`. Confirm `/events/[id]` still 404s for non-UUIDs and that `calendar` never reaches it.
 
 - [done] **Add a skip-to-content link to the root layout**
   (Paths relative to the repo root.) The sticky header has 4-6 focusable controls before the content on every page, and there is no skip link. In `src/app/layout.tsx`, add `id="main"` and `tabIndex={-1}` to `<main>`, plus a first-in-body `<a href="#main">Skip to content</a>` styled only with Tailwind utilities (`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50` plus the existing `btn` class). Do not edit `globals.css`, because the user has uncommitted work there. Done when tsc and lint pass and the link is the first element in the tab order.
+
+- [done] **Apply the length limits to lead-side participant inserts**
+  (Paths relative to the repo root.) Run 10 added DB check constraints on `event_registrations`, but only the public actions pre-check lengths. Once the SQL is applied, a lead's over-long walk-in, manual add or CSV import fails at the database with a generic error, and one bad CSV row aborts the whole import. In `src/app/dashboard/actions.ts`, call `validateLengths` from `src/lib/limits.ts` in `addParticipantAction` (redirect with the message via `go(back, "error", …)`) and `walkInAction` (return `{ ok: false, error: msg }`). In `parseParticipantRows` (`src/lib/participants.ts`), count rows that fail `validateLengths` as `invalid` so the import skips them and reports them in the existing "Skipped: N invalid" note. Add a unit test for an over-long CSV row. Do not touch the manage-event page or the events list page (user's uncommitted work), and do not change the limits or the SQL.
+
+- [done] **Mark the active dashboard tab for screen readers**
+  (Paths relative to the repo root.) `src/components/DashNav.tsx` and `src/components/ClubTabs.tsx` show the current section only through color. Add `aria-current="page"` to the active link in each (use the same condition that already picks the active classes), and give each `<nav>` a distinct `aria-label` ("Dashboard" and "Club sections"). Do the same for the selected filter chips on `src/app/events/page.tsx`, using `aria-current="true"` on the chip that matches the active category/club, or on the "All" chip when no filter is set. Leave styling alone and do not edit `globals.css`. Done when tsc, lint and tests pass.
 
 ## Run log
 
@@ -227,3 +233,18 @@ Note: `club-hub/AGENTS.md` warns that this Next.js version has breaking changes;
 - Needs the user: re-run `supabase/event_ops.sql` in Supabase for the DB length constraints. Caveat: once applied, dashboard walk-in/bulk/CSV inserts with fields over those limits (e.g. department over 80) will fail at the database, since only the public actions pre-check lengths.
 - Checks: 67/67 tests pass, tsc clean, lint clean. Not exercised in a running app.
 - Not pushed (confirm with user). Next: campus-wide calendar feed, cancel-own-registration; blocked items still need manual checks.
+
+### 2026-10-04 — planner run (tenth)
+- Surveyed: the full status file, `package.json`, the CI workflow, `.gitignore`, `git log --oneline -30` (one new commit since the last planner run, 7448d55), the `src/` tree, the participant and event-day sections of `src/app/dashboard/actions.ts`, `src/lib/limits.ts`, `parseParticipantRows` in `src/lib/participants.ts`, the feedback/announcement schema, `ui.tsx` flash roles, and the `DashNav`/`ClubTabs` nav components. TODO/FIXME/XXX grep of `src`, `supabase` and `scripts`: none. The caller reports 67 tests passing and tsc and lint clean.
+- Added "length limits on lead-side participant inserts": this closes the caveat from run 10. Once the user applies the new constraints, lead walk-ins and manual adds with over-long fields fail with a generic error, and a single bad CSV row aborts the whole import.
+- Added "aria-current on dashboard tabs and filter chips": follows the skip link as the next small accessibility gap. The active tab is currently shown by color alone. The task touches only the nav components and the public `/events` page, none of which the user has modified.
+- Not added: anything touching `src/app/login/*`, the manage-event page, the dashboard events list or `globals.css` (user's uncommitted work), or the ticket page beyond the pending cancel task.
+- Not added: length checks for `club_members` inserts. That table has no DB length constraints, so nothing breaks there.
+- Not added (still deferred, reasons unchanged): server-action/route tests with Supabase mocking, form spam protection/rate-limiting, a CSP, email notifications, `next build` in CI, and git-ignoring `.archify/`.
+- Two tasks were already pending and unstarted (campus-wide calendar feed, cancel own registration), so I kept this batch to two small items.
+
+### 2026-10-04 — autopilot run 11 (cron, every 15m)
+- Branch `autopilot/hardening-and-seo`; user's uncommitted login/manage-event work untouched.
+- Done: `validateLengths` in `addParticipantAction` and `walkInAction`; over-long CSV rows now count as invalid and are skipped (1 new test); `aria-current`/`aria-label` on DashNav, ClubTabs and the /events filter chips (groups get `role="group"`); campus-wide `/events/calendar` feed (optional `?category=`, titles prefixed with the club name) linked as "Subscribe to calendar" on /events. A static `calendar` segment outranks `[id]`, and the event page already UUID-guards.
+- Checks: 68/68 tests pass, tsc clean, lint clean. Not exercised in a running app; the `clubs!inner(...)` filter in the feed needs a live check.
+- Not pushed (confirm with user). Next: cancel-own-registration (needs SQL applied by the user); blocked items still need manual checks.

@@ -41,21 +41,23 @@ export default async function EventsPage({ searchParams }: PageProps<"/events">)
     const s = p.toString();
     return s ? `/events?${s}` : "/events";
   };
+  const cur = (active: boolean) => ({ "aria-current": active ? ("true" as const) : undefined });
   const chip = (active: boolean) => `badge ${active ? "bg-brand text-brand-fg border-transparent" : "hover:bg-brand/10 hover:border-brand/40"}`;
 
   return (
     <>
       <PageHeader title="Events" subtitle="Everything happening across all clubs." />
       <div className="mb-6 space-y-2">
-        <div className="flex flex-wrap gap-2" aria-label="Filter by category">
-          <Link href={href("", clubSlug)} className={chip(!category)}>All categories</Link>
-          {EVENT_CATEGORIES.map((c) => <Link key={c} href={href(c, clubSlug)} className={chip(category === c)}>{c}</Link>)}
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
+          <Link href={href("", clubSlug)} className={chip(!category)} {...cur(!category)}>All categories</Link>
+          {EVENT_CATEGORIES.map((c) => <Link key={c} href={href(c, clubSlug)} className={chip(category === c)} {...cur(category === c)}>{c}</Link>)}
         </div>
-        <div className="flex flex-wrap gap-2" aria-label="Filter by club">
-          <Link href={href(category, "")} className={chip(!clubSlug)}>All clubs</Link>
-          {clubs.map((c) => <Link key={c.id} href={href(category, c.slug)} className={chip(clubSlug === c.slug)}>{c.name}</Link>)}
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by club">
+          <Link href={href(category, "")} className={chip(!clubSlug)} {...cur(!clubSlug)}>All clubs</Link>
+          {clubs.map((c) => <Link key={c.id} href={href(category, c.slug)} className={chip(clubSlug === c.slug)} {...cur(clubSlug === c.slug)}>{c.name}</Link>)}
         </div>
       </div>
+      <p className="mb-4 text-sm"><a href={category ? `/events/calendar?category=${encodeURIComponent(category)}` : "/events/calendar"} className="text-brand hover:underline">Subscribe to calendar</a></p>
       <h2 className="mb-3 border-l-4 border-fuchsia-500 pl-3 text-lg font-semibold">Upcoming</h2>
       {upcoming.length === 0 ? (
         <Empty>No upcoming events{category || clubSlug ? " match these filters" : ""}.</Empty>

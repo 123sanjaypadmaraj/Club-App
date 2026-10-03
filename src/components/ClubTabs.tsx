@@ -15,10 +15,11 @@ export function ClubTabs({ slug }: { slug: string }) {
   const base = `/dashboard/clubs/${slug}`;
   const current = path === base ? "" : path.slice(base.length + 1).split("/")[0];
   return (
-    <nav className="mb-6 flex gap-1 print:hidden overflow-x-auto border-b border-line">
+    <nav aria-label="Club sections" className="mb-6 flex gap-1 print:hidden overflow-x-auto border-b border-line">
       {TABS.map((t) => (
         <Link
           key={t.key}
+          aria-current={current === t.key ? "page" : undefined}
           href={t.key ? `${base}/${t.key}` : base}
           className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium ${current === t.key ? "border-brand text-brand" : "border-transparent text-muted hover:text-foreground"}`}
         >

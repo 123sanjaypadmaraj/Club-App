@@ -74,4 +74,9 @@ describe("parseParticipantRows", () => {
     expect(res).toMatchObject({ invalid: 2, duplicates: 1 });
     expect(res.valid).toHaveLength(1);
   });
+  it("skips rows with over-long fields instead of failing the import", () => {
+    const res = parseParticipantRows([["name", "email", "phone"], ["Ok", "ok@x.edu", "123"], ["x".repeat(121), "long@x.edu", "1"], ["P", "p@x.edu", "9".repeat(21)]]);
+    expect(res.invalid).toBe(2);
+    expect(res.valid.map((r) => r.email)).toEqual(["ok@x.edu"]);
+  });
 });

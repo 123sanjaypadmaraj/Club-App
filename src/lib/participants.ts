@@ -1,4 +1,5 @@
 import type { Registration } from "@/lib/types";
+import { validateLengths } from "@/lib/limits";
 
 /** Case-insensitive substring match on name, email, roll no, phone or ticket code. An empty query returns everything. */
 export function filterRegistrations(regs: Registration[], q: string): Registration[] {
@@ -70,6 +71,7 @@ export function parseParticipantRows(rows: string[][]): { valid: ImportRow[]; in
     cols.forEach((k, i) => { if (k && row[i] !== undefined) rec[k] = row[i].trim(); });
     const email = (rec.email ?? "").toLowerCase();
     if (!rec.full_name || !EMAIL.test(email)) { invalid++; continue; }
+    if (validateLengths({ full_name: rec.full_name, email, roll_no: rec.roll_no, department: rec.department, phone: rec.phone })) { invalid++; continue; }
     if (seen.has(email)) { duplicates++; continue; }
     seen.add(email);
     const year = parseInt(rec.year ?? "", 10);

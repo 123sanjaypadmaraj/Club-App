@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { logActionError } from "@/lib/log";
+import { validateLengths } from "@/lib/limits";
 import { redirect } from "next/navigation";
 import { requireAdmin, requireClubAccess, requireProfile } from "@/lib/auth";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
@@ -134,16 +135,21 @@ export async function addParticipantAction(slug: string, eventId: string, formDa
   const full_name = str(formData.get("full_name"));
   const email = str(formData.get("email"))?.toLowerCase();
   if (!full_name || !email || !EMAIL.test(email)) return go(back, "error", "A name and a valid email are required.");
+  const roll_no = str(formData.get("roll_no"));
+  const department = str(formData.get("department"));
+  const phone = str(formData.get("phone"));
+  const tooLong = validateLengths({ full_name, email, roll_no, department, phone });
+  if (tooLong) return go(back, "error", tooLong);
 
   const supabase = await createClient();
   const { error } = await supabase.from("event_registrations").insert({
     event_id: eventId,
     full_name,
     email,
-    roll_no: str(formData.get("roll_no")),
-    department: str(formData.get("department")),
+    roll_no,
+    department,
     year: int(formData.get("year")),
-    phone: str(formData.get("phone")),
+    phone,
     attended: formData.get("attended") === "on",
     attended_at: formData.get("attended") === "on" ? new Date().toISOString() : null,
   });
@@ -252,6 +258,8 @@ export async function walkInAction(
   if (!full_name) return { ok: false, error: "A name is required." };
   const email = input.email?.trim().toLowerCase();
   if (email && !EMAIL.test(email)) return { ok: false, error: "That email doesn't look right." };
+  const tooLong = validateLengths({ full_name, email, phone: input.phone?.trim(), department: input.department?.trim() });
+  if (tooLong) return { ok: false, error: tooLong };
   const ticket_code = newTicketCode();
   const supabase = await createClient();
   const { data, error } = await supabase.from("event_registrations").insert({
