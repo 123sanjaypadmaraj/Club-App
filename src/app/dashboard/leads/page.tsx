@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton, SubmitButton } from "@/components/SubmitButton";
 import { Empty, Field, Notice, PageHeader } from "@/components/ui";
-import { assignLeadAction, createLeadAction, unassignLeadAction } from "@/app/dashboard/actions";
+import { assignLeadAction, createLeadAction, resetLeadPasswordAction, unassignLeadAction } from "@/app/dashboard/actions";
 
 export const metadata = { title: "Club leads" };
 
@@ -68,6 +68,14 @@ export default async function LeadsPage({ searchParams }: PageProps<"/dashboard/
                   </select>
                   <SubmitButton className="btn" pendingText="…">Assign</SubmitButton>
                 </form>
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-sm text-muted hover:text-foreground">Reset password</summary>
+                  <form action={resetLeadPasswordAction} className="mt-2 flex gap-2">
+                    <input type="hidden" name="user_id" value={l.id} />
+                    <input name="password" type="text" minLength={8} required autoComplete="off" placeholder="New password (min 8)" aria-label={`New password for ${l.email}`} className="input max-w-xs" />
+                    <ConfirmButton message={`Reset the password for ${l.email}?`} className="btn">Reset</ConfirmButton>
+                  </form>
+                </details>
               </div>
             );
           })}

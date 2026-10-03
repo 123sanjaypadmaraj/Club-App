@@ -20,8 +20,8 @@ export default async function SettingsTab({ params, searchParams }: PageProps<"/
         <Field label="Tagline"><input name="tagline" maxLength={140} defaultValue={club.tagline ?? ""} className="input" /></Field>
         <div className="sm:col-span-2"><Field label="About"><textarea name="description" rows={4} maxLength={2000} defaultValue={club.description ?? ""} className="input" /></Field></div>
         <Field label="Contact email"><input name="contact_email" type="email" defaultValue={club.contact_email ?? ""} className="input" /></Field>
-        <Field label="Faculty advisor"><input name="faculty_advisor" defaultValue={club.faculty_advisor ?? ""} className="input" /></Field>
-        <Field label="Meeting schedule"><input name="meeting_schedule" defaultValue={club.meeting_schedule ?? ""} className="input" placeholder="Fridays 5 PM" /></Field>
+        <Field label="Faculty advisor"><input name="faculty_advisor" maxLength={120} defaultValue={club.faculty_advisor ?? ""} className="input" /></Field>
+        <Field label="Meeting schedule"><input name="meeting_schedule" maxLength={160} defaultValue={club.meeting_schedule ?? ""} className="input" placeholder="Fridays 5 PM" /></Field>
         <Field label="Founded (year)"><input name="founded_year" type="number" min={1900} max={2100} defaultValue={club.founded_year ?? ""} className="input" /></Field>
         <Field label="Join-the-club form" hint="Link to your membership / recruitment form"><input name="join_form_url" defaultValue={club.join_form_url ?? ""} className="input" /></Field>
         <Field label="Instagram"><input name="instagram_url" defaultValue={club.instagram_url ?? ""} className="input" /></Field>

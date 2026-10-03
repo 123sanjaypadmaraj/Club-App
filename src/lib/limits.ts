@@ -8,6 +8,13 @@ export const LIMITS = {
   comment: 2000,
   title: 160,
   body: 2000,
+  club_name: 80,
+  tagline: 140,
+  about: 2000,
+  venue: 160,
+  event_description: 4000,
+  faculty_advisor: 120,
+  meeting_schedule: 160,
 } as const;
 
 export type LimitedField = keyof typeof LIMITS;
@@ -21,6 +28,13 @@ const LABELS: Record<LimitedField, string> = {
   comment: "Comments",
   title: "Title",
   body: "Message",
+  club_name: "Club name",
+  tagline: "Tagline",
+  about: "About",
+  venue: "Venue",
+  event_description: "Description",
+  faculty_advisor: "Faculty advisor",
+  meeting_schedule: "Meeting schedule",
 };
 
 /** Returns a friendly message for the first over-long field, or null when everything fits. */

@@ -46,19 +46,27 @@ export async function saveClubAction(slug: string, formData: FormData) {
   const back = `/dashboard/clubs/${slug}/settings`;
   const name = str(formData.get("name"));
   if (!name) return go(back, "error", "Club name is required.");
+  const tagline = str(formData.get("tagline"));
+  const description = str(formData.get("description"));
+  const contact_email = str(formData.get("contact_email"));
+  const faculty_advisor = str(formData.get("faculty_advisor"));
+  const meeting_schedule = str(formData.get("meeting_schedule"));
+  const tooLong = validateLengths({ club_name: name, tagline, about: description, faculty_advisor, meeting_schedule, email: contact_email });
+  if (tooLong) return go(back, "error", tooLong);
+  if (contact_email && !EMAIL.test(contact_email)) return go(back, "error", "Please enter a valid contact email.");
 
   const patch: Record<string, unknown> = {
     name,
-    tagline: str(formData.get("tagline")),
-    description: str(formData.get("description")),
-    contact_email: str(formData.get("contact_email")),
+    tagline,
+    description,
+    contact_email,
     instagram_url: safeUrl(formData.get("instagram_url")),
     linkedin_url: safeUrl(formData.get("linkedin_url")),
     whatsapp_url: safeUrl(formData.get("whatsapp_url")),
     website_url: safeUrl(formData.get("website_url")),
     join_form_url: safeUrl(formData.get("join_form_url")),
-    faculty_advisor: str(formData.get("faculty_advisor")),
-    meeting_schedule: str(formData.get("meeting_schedule")),
+    faculty_advisor,
+    meeting_schedule,
     founded_year: int(formData.get("founded_year")),
   };
   const color = str(formData.get("accent_color"));
@@ -86,14 +94,18 @@ export async function saveEventAction(slug: string, eventId: string | null, form
   const ends_at = fromLocalInput(String(formData.get("ends_at") ?? ""));
   if (!title || !starts_at) return go(back, "error", "Title and start time are required.");
   if (ends_at && new Date(ends_at) < new Date(starts_at)) return go(back, "error", "End time must be after the start time.");
+  const description = str(formData.get("description"));
+  const venue = str(formData.get("venue"));
+  const tooLong = validateLengths({ title, venue, event_description: description });
+  if (tooLong) return go(back, "error", tooLong);
 
   const capacity = int(formData.get("capacity"));
   const status = String(formData.get("status"));
   const row = {
     title,
-    description: str(formData.get("description")),
+    description,
     category: str(formData.get("category")) ?? "Workshop",
-    venue: str(formData.get("venue")),
+    venue,
     starts_at,
     ends_at,
     capacity: capacity && capacity > 0 ? capacity : null,
@@ -472,6 +484,22 @@ export async function createLeadAction(formData: FormData) {
   }
   revalidatePath("/dashboard/leads");
   return go(back, "ok", `Lead account created for ${email}.`);
+}
+
+export async function resetLeadPasswordAction(formData: FormData) {
+  await requireAdmin();
+  const back = "/dashboard/leads";
+  const userId = String(formData.get("user_id") ?? "");
+  const password = String(formData.get("password") ?? "");
+  if (!UUID.test(userId)) return go(back, "error", "Pick a lead.");
+  if (password.length < 8) return go(back, "error", "Password must be at least 8 characters.");
+
+  const svc = createServiceClient();
+  const { data: target } = await svc.from("profiles").select("email, role").eq("id", userId).maybeSingle();
+  if (!target || target.role !== "club_lead") return go(back, "error", "Only club lead accounts can be reset here.");
+  const { error } = await svc.auth.admin.updateUserById(userId, { password });
+  if (error) { logActionError("resetLeadPasswordAction", error, { userId }); return go(back, "error", "Could not reset the password."); }
+  return go(back, "ok", `Password reset for ${target.email}.`);
 }
 
 export async function assignLeadAction(formData: FormData) {

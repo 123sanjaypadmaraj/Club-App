@@ -47,7 +47,7 @@ npm run dev                    # http://localhost:3000
 > `SUPABASE_SERVICE_ROLE_KEY` bypasses all security. Keep it server-side only (never `NEXT_PUBLIC_`). It's used in exactly one place: the admin creating lead accounts.
 
 ## Day to day
-- **Admin**: *Club leads* → create an account per club lead and tick their club(s). Share the email + temporary password.
+- **Admin**: *Club leads* → create an account per club lead and tick their club(s). Share the email + temporary password. If a lead forgets it, use *Reset password* on their card.
 - **Lead**: *My club* → Events → *New event*. Paste a Google Form link in "External registration form" / "External feedback form", or leave blank and use the built-in forms. Share the event's public page link (`/events/<id>`). On the event, check people in and download participants as CSV.
 - **Metrics** (per event → club → all clubs): events, registrations, attendance rate (past events only), average rating (weighted by responses), members, budget spent, turnout per event, trend vs. the earlier half of the period.
 

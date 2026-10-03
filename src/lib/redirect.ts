@@ -1,5 +1,10 @@
 const BACKSLASH = String.fromCharCode(92);
 
+/** `next` value for the login redirect: the path plus its query string (search includes the leading ?). */
+export function loginRedirectTarget(pathname: string, search: string): string {
+  return pathname + (search && search !== "?" ? search : "");
+}
+
 /**
  * Same-site relative path for post-login redirects; anything else falls back.
  * Browsers read a backslash as a slash and drop tabs/newlines inside URLs, so
