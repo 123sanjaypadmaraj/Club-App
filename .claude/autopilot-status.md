@@ -59,7 +59,7 @@ Note: `club-hub/AGENTS.md` warns that this Next.js version has breaking changes;
 - [done] **Add schema.org Event structured data to public event pages**
   (Paths relative to the repo root.) Continues the SEO work: add a pure `eventJsonLd(event, club, origin)` to `src/lib/seo.ts` returning a schema.org `Event` object (`name`, `startDate`/`endDate` as ISO, `eventStatus` = `EventCancelled` for cancelled else `EventScheduled`, `eventAttendanceMode` Offline, `location` `{ "@type": "Place", name: venue }` only when venue is set, `description` truncated to ~300 chars, `organizer` `{ "@type": "Organization", name: club name, url: <origin>/clubs/<slug> when origin is set }`, `url` when origin is set, `offers` omitted). Render it in `src/app/events/[id]/page.tsx` as `<script type="application/ld+json">` with `JSON.stringify(...).replace(/</g, "\\u003c")` to prevent script breakout. Read the JSON-LD guide in `node_modules/next/dist/docs/` first if one exists. Unit-test the builder (cancelled status, missing venue, missing origin, `<` escaping helper if extracted).
 
-- [pending] **Enforce length limits on public registration and feedback input**
+- [done] **Enforce length limits on public registration and feedback input**
   (Paths relative to the repo root.) The public forms have `maxLength` only in HTML. `registerForEvent`/`submitFeedback` in `src/app/actions.ts` accept any length, and RLS lets anon insert straight through the Supabase API, so someone can store megabyte-sized names or comments. Add a pure `clampFields`/`validateLengths` helper in `src/lib/` (limits: full_name 120, email 160, roll_no 40, department 80, phone 20, comment 2000) with unit tests. Both actions use it and reject over-long input with a friendly `?error=` message. Also append a re-runnable block to `supabase/event_ops.sql` that adds matching `check (char_length(col) <= N)` constraints on `event_registrations` and `event_feedback` (`drop constraint if exists` then `add constraint ... not valid`, so existing rows never block it), and note in the run log that the user must re-run that file in Supabase.
 
 - [done] **Show in-progress events as "Happening now" on public club pages**
@@ -70,6 +70,15 @@ Note: `club-hub/AGENTS.md` warns that this Next.js version has breaking changes;
 
 - [done] **Add Dependabot config for npm and GitHub Actions**
   (Paths relative to the repo root.) Nothing keeps `next`, `@supabase/*` or the CI actions patched. Add `.github/dependabot.yml` (version 2) with weekly `npm` updates for `/` (group minor/patch updates into one PR, `open-pull-requests-limit: 5`, ignore semver-major for `@types/node` because vitest@^3 was pinned around it per autopilot run 1) and weekly `github-actions` updates. Config only: run no install or audit commands.
+
+- [done] **Show in-progress events on the home page's "Upcoming events"**
+  (Paths relative to the repo root.) `src/app/page.tsx` still selects only `starts_at >= now` (limit 6), so a running event disappears from the landing page the moment it starts. This is the same bug runs 5 and 9 fixed on `/events` and `/clubs/[slug]`. Add `ends_at` to the select, add a parallel query for published events with `starts_at < now` and `ends_at > now`, list those first, and pass `EventCard`'s existing `live` flag (follow `src/app/events/page.tsx`). Keep at most 6 cards in total. Events with a null `ends_at` keep their current behavior. Done when tsc, lint and tests pass.
+
+- [pending] **Add a campus-wide subscribable calendar feed**
+  (Paths relative to the repo root.) Students can subscribe to one club (`/clubs/<slug>/calendar`) but not to everything. Add `src/app/events/calendar/route.ts`, modeled on the club feed route: published events of active clubs from the last 90 days onward, limit 500, `eventsToIcs(..., "Club Hub events")`, the same headers and origin logic. Honor an optional `?category=` through `pickFilter(…, EVENT_CATEGORIES)` and ignore unknown values. Prefix each SUMMARY with the club name (`"<Club>: <title>"`) by mapping titles before calling `eventsToIcs`, so the shared ICS builder is not changed. Link it from `src/app/events/page.tsx` as "Subscribe to calendar" next to the filters, carrying the current `category` when one is set. The static `calendar` segment takes precedence over `[id]`. Confirm `/events/[id]` still 404s for non-UUIDs and that `calendar` never reaches it.
+
+- [done] **Add a skip-to-content link to the root layout**
+  (Paths relative to the repo root.) The sticky header has 4-6 focusable controls before the content on every page, and there is no skip link. In `src/app/layout.tsx`, add `id="main"` and `tabIndex={-1}` to `<main>`, plus a first-in-body `<a href="#main">Skip to content</a>` styled only with Tailwind utilities (`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50` plus the existing `btn` class). Do not edit `globals.css`, because the user has uncommitted work there. Done when tsc and lint pass and the link is the first element in the tab order.
 
 ## Run log
 
@@ -201,3 +210,20 @@ Note: `club-hub/AGENTS.md` warns that this Next.js version has breaking changes;
 - Done: club page lists in-progress events first with the "Happening now" badge and drops them from Past; `eventsToIcs` (shared VEVENT helper, `eventToIcs` output unchanged) with 2 new tests, plus `/clubs/[slug]/calendar` feed route (published events from the last 90 days on, 404 for unknown slug, 1h cache) linked as "Subscribe to calendar"; `.github/dependabot.yml`.
 - Checks: 64/64 tests pass, tsc clean, lint clean. Routes and club page not exercised against a live app.
 - Not pushed (confirm with user). Next: "Enforce length limits on public input" (its SQL block must be re-run in Supabase by the user), then cancel-own-registration; blocked items still need manual checks.
+
+### 2026-10-04 — planner run (ninth)
+- Surveyed: the full status file, README, `package.json`, the CI workflow, `git log --oneline -30` (one new commit since the last planner run, bf1b4c5), the `src/` tree, `src/app/page.tsx`, `src/app/layout.tsx`, `src/app/events/page.tsx`, the feedback and ticket pages, the club calendar route, and the calendar links across pages. TODO/FIXME/XXX grep of `src`, `supabase` and `scripts`: none. The caller reports 64 tests passing and tsc and lint clean.
+- Added "in-progress events on the home page": this is the last public listing that still drops a running event, after runs 5 and 9 fixed `/events` and the club page.
+- Added "campus-wide calendar feed": a cheap follow-on to the per-club feed that reuses `eventsToIcs` and the category filter without changing the tested builder.
+- Added "skip-to-content link": the project has no accessibility work yet, and this is the smallest high-value gap. It is confined to `layout.tsx` so it stays clear of the user's `globals.css` edits.
+- Not added: anything touching `src/app/login/*`, the manage-event page, the dashboard events list or `globals.css` (user's uncommitted work), or the ticket page beyond the pending cancel task.
+- Not added: `next build` in CI. It needs real-looking env and may hit Supabase at build time for static pages. Still deferred.
+- Not added (still deferred, reasons unchanged): server-action/route tests with Supabase mocking, form spam protection/rate-limiting, a CSP, email notifications, and git-ignoring `.archify/`.
+- Two tasks were already pending and unstarted (length limits, cancel own registration), so I kept this batch to three small items.
+
+### 2026-10-04 — autopilot run 10 (cron, every 15m)
+- Branch `autopilot/hardening-and-seo`; user's uncommitted login/manage-event work untouched.
+- Done: `src/lib/limits.ts` (`validateLengths`, 3 tests) used by `registerForEvent` and `submitFeedback`; a re-runnable `NOT VALID` check-constraint block appended to `supabase/event_ops.sql`; home page lists in-progress events first with the "Happening now" badge (max 6 cards in total); skip-to-content link and `#main-content` in the root layout.
+- Needs the user: re-run `supabase/event_ops.sql` in Supabase for the DB length constraints. Caveat: once applied, dashboard walk-in/bulk/CSV inserts with fields over those limits (e.g. department over 80) will fail at the database, since only the public actions pre-check lengths.
+- Checks: 67/67 tests pass, tsc clean, lint clean. Not exercised in a running app.
+- Not pushed (confirm with user). Next: campus-wide calendar feed, cancel-own-registration; blocked items still need manual checks.

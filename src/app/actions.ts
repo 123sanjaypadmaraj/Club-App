@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { logActionError } from "@/lib/log";
+import { validateLengths } from "@/lib/limits";
 import { createClient } from "@/lib/supabase/server";
 import { int, str } from "@/lib/format";
 import { newTicketCode } from "@/lib/tickets";
@@ -16,6 +17,11 @@ export async function registerForEvent(eventId: string, formData: FormData) {
   const email = str(formData.get("email"))?.toLowerCase() ?? null;
   if (!full_name || !email) return back("error", "Name and email are required.");
   if (!EMAIL.test(email)) return back("error", "Please enter a valid email address.");
+  const roll_no = str(formData.get("roll_no"));
+  const department = str(formData.get("department"));
+  const phone = str(formData.get("phone"));
+  const tooLong = validateLengths({ full_name, email, roll_no, department, phone });
+  if (tooLong) return back("error", tooLong);
 
   // The code is made here (anonymous visitors can't read their row back) and the DB decides
   // confirmed vs. waitlisted. The ticket page looks it up through a security-definer function.
@@ -25,10 +31,10 @@ export async function registerForEvent(eventId: string, formData: FormData) {
     event_id: eventId,
     full_name,
     email,
-    roll_no: str(formData.get("roll_no")),
-    department: str(formData.get("department")),
+    roll_no,
+    department,
     year: int(formData.get("year")),
-    phone: str(formData.get("phone")),
+    phone,
     ticket_code,
   });
 
@@ -50,13 +56,18 @@ export async function submitFeedback(eventId: string, formData: FormData) {
   if (!email || !EMAIL.test(email)) return back("error", "Please enter a valid email address.");
   if (!rating || rating < 1 || rating > 5) return back("error", "Please pick a rating from 1 to 5.");
 
+  const full_name = str(formData.get("full_name"));
+  const comment = str(formData.get("comment"));
+  const tooLong = validateLengths({ full_name, email, comment });
+  if (tooLong) return back("error", tooLong);
+
   const supabase = await createClient();
   const { error } = await supabase.from("event_feedback").insert({
     event_id: eventId,
-    full_name: str(formData.get("full_name")),
+    full_name,
     email,
     rating,
-    comment: str(formData.get("comment")),
+    comment,
   });
 
   if (error) {

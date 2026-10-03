@@ -10,15 +10,18 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const cat = typeof sp.cat === "string" ? sp.cat : "";
 
   const supabase = await createClient();
-  const [{ data: clubsData }, { data: eventsData }] = await Promise.all([
+  const nowIso = new Date().toISOString();
+  const select = "id, title, category, venue, starts_at, clubs(name, slug, accent_color)";
+  const [{ data: clubsData }, { data: eventsData }, { data: runningData }] = await Promise.all([
     supabase.from("clubs").select("*").eq("is_active", true).order("name"),
     supabase
       .from("events")
-      .select("id, title, category, venue, starts_at, clubs(name, slug, accent_color)")
+      .select(select)
       .eq("status", "published")
-      .gte("starts_at", new Date().toISOString())
+      .gte("starts_at", nowIso)
       .order("starts_at")
       .limit(6),
+    supabase.from("events").select(select).eq("status", "published").lt("starts_at", nowIso).gt("ends_at", nowIso).order("starts_at").limit(6),
   ]);
 
   const allClubs = (clubsData as Club[]) ?? [];
@@ -26,7 +29,8 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const clubs = allClubs.filter(
     (c) => (!cat || c.category === cat) && (!q || `${c.name} ${c.tagline ?? ""} ${c.description ?? ""}`.toLowerCase().includes(q.toLowerCase())),
   );
-  const events = (eventsData ?? []) as unknown as EventCardData[];
+  const live = ((runningData ?? []) as unknown as EventCardData[]).slice(0, 6);
+  const events = ((eventsData ?? []) as unknown as EventCardData[]).slice(0, 6 - live.length);
 
   return (
     <div className="space-y-12">
@@ -49,10 +53,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           <h2 className="border-l-4 border-fuchsia-500 pl-3 text-xl font-bold">Upcoming events</h2>
           <Link href="/events" className="text-sm text-brand hover:underline">All events →</Link>
         </div>
-        {events.length === 0 ? (
+        {events.length + live.length === 0 ? (
           <Empty>No upcoming events right now. Check back soon!</Empty>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {live.map((e) => <EventCard key={e.id} e={e} live />)}
             {events.map((e) => <EventCard key={e.id} e={e} />)}
           </div>
         )}

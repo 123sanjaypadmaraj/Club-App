@@ -161,3 +161,17 @@ left join lateral (
 ) f on true
 where e.status <> 'draft' or public.manages_club(e.club_id);
 grant select on public.event_stats to authenticated;
+
+-- ---------- length limits on public input (re-runnable) ----------
+-- Anonymous visitors can insert straight through the API, so cap sizes in the database too.
+-- NOT VALID: existing rows never block this; new and updated rows are checked.
+alter table public.event_registrations drop constraint if exists event_registrations_len_chk;
+alter table public.event_registrations add constraint event_registrations_len_chk check (
+  char_length(full_name) <= 120 and char_length(email) <= 160 and char_length(roll_no) <= 40
+  and char_length(department) <= 80 and char_length(phone) <= 20
+) not valid;
+
+alter table public.event_feedback drop constraint if exists event_feedback_len_chk;
+alter table public.event_feedback add constraint event_feedback_len_chk check (
+  char_length(full_name) <= 120 and char_length(email) <= 160 and char_length(comment) <= 2000
+) not valid;
