@@ -11,6 +11,7 @@ import { fromLocalInput, int, safeUrl, str } from "@/lib/format";
 import { duplicateEventRow } from "@/lib/events";
 import { newTicketCode, parseTicketCode } from "@/lib/tickets";
 import { parseParticipantRows, placeholderEmail } from "@/lib/participants";
+import { dedupeMembers } from "@/lib/members";
 import { validatePasswordChange } from "@/lib/password";
 import type { ClubEvent, Registration } from "@/lib/types";
 
@@ -356,11 +357,16 @@ export async function addMemberAction(slug: string, formData: FormData) {
   const back = `/dashboard/clubs/${slug}/members`;
   const full_name = str(formData.get("full_name"));
   if (!full_name) return go(back, "error", "Member name is required.");
+  const email = str(formData.get("email"))?.toLowerCase() ?? null;
   const supabase = await createClient();
+  if (email) {
+    const { data: dup } = await supabase.from("club_members").select("id").eq("club_id", club.id).ilike("email", email).limit(1);
+    if (dup?.length) return go(back, "error", "A member with that email already exists.");
+  }
   const { error } = await supabase.from("club_members").insert({
     club_id: club.id,
     full_name,
-    email: str(formData.get("email"))?.toLowerCase() ?? null,
+    email,
     roll_no: str(formData.get("roll_no")),
     department: str(formData.get("department")),
     year: int(formData.get("year")),
@@ -396,9 +402,13 @@ export async function importMembersAction(slug: string, formData: FormData) {
   if (rows.length === 0) return go(back, "error", "No valid rows found. Use: name, email, roll no, department, year, phone, position");
   if (rows.length > 500) return go(back, "error", "Please import at most 500 rows at a time.");
   const supabase = await createClient();
-  const { error } = await supabase.from("club_members").insert(rows);
+  const { data: existing, error: existingErr } = await supabase.from("club_members").select("email, roll_no").eq("club_id", club.id).limit(5000);
+  if (existingErr) { logActionError("importMembersAction", existingErr, { slug }); return go(back, "error", "Import failed — nothing was added."); }
+  const { fresh, duplicates } = dedupeMembers(rows, existing ?? []);
+  if (fresh.length === 0) return go(back, "error", `Everyone in that list is already a member (${duplicates}).`);
+  const { error } = await supabase.from("club_members").insert(fresh);
   if (error) { logActionError("importMembersAction", error, { slug }); return go(back, "error", "Import failed — nothing was added."); }
-  return go(back, "ok", `Imported ${rows.length} members.${skipped ? ` Skipped ${skipped} row(s) with an invalid email.` : ""}`);
+  return go(back, "ok", `Imported ${fresh.length} members.${duplicates ? ` Skipped ${duplicates} already on the roster.` : ""}${skipped ? ` Skipped ${skipped} row(s) with an invalid email.` : ""}`);
 }
 
 export async function setMemberStatusAction(slug: string, memberId: string, status: "active" | "alumni" | "inactive") {
@@ -500,6 +510,19 @@ export async function resetLeadPasswordAction(formData: FormData) {
   const { error } = await svc.auth.admin.updateUserById(userId, { password });
   if (error) { logActionError("resetLeadPasswordAction", error, { userId }); return go(back, "error", "Could not reset the password."); }
   return go(back, "ok", `Password reset for ${target.email}.`);
+}
+
+export async function deleteLeadAction(userId: string) {
+  await requireAdmin();
+  const back = "/dashboard/leads";
+  if (!UUID.test(userId)) return go(back, "error", "Pick a lead.");
+  const svc = createServiceClient();
+  const { data: target } = await svc.from("profiles").select("email, role").eq("id", userId).maybeSingle();
+  if (!target || target.role !== "club_lead") return go(back, "error", "Only club lead accounts can be deleted here.");
+  const { error } = await svc.auth.admin.deleteUser(userId);
+  if (error) { logActionError("deleteLeadAction", error, { userId }); return go(back, "error", "Could not delete the account."); }
+  revalidatePath("/dashboard/leads");
+  return go(back, "ok", `Deleted the account for ${target.email}.`);
 }
 
 export async function assignLeadAction(formData: FormData) {

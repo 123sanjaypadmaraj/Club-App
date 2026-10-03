@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { eventsToIcs } from "@/lib/ics";
 import { siteOrigin } from "@/lib/seo";
 import { EVENT_CATEGORIES, pickFilter } from "@/lib/categories";
+import { logActionError } from "@/lib/log";
 
 const WINDOW_DAYS = 90;
 
@@ -31,7 +32,11 @@ export async function GET(req: NextRequest) {
     .order("starts_at")
     .limit(500);
   if (category) q = q.eq("category", category);
-  const { data } = await q;
+  const { data, error } = await q;
+  if (error) {
+    logActionError("campusCalendar", error);
+    return new Response("Something went wrong", { status: 500 });
+  }
 
   const origin = siteOrigin(process.env.NEXT_PUBLIC_SITE_URL) ?? req.nextUrl.origin;
   const events = ((data ?? []) as unknown as Row[]).map((e) => ({

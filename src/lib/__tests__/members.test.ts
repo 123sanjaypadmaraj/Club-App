@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterMembers } from "../members";
+import { dedupeMembers, filterMembers } from "../members";
 import type { Member } from "../types";
 
 const mk = (over: Partial<Member>): Member => ({
@@ -24,5 +24,29 @@ describe("filterMembers", () => {
   it("filters by status and combines with the query", () => {
     expect(filterMembers(list, "", "alumni").map((m) => m.id)).toEqual(["2"]);
     expect(filterMembers(list, "asha", "alumni")).toEqual([]);
+  });
+});
+
+describe("dedupeMembers", () => {
+  const existing = [{ email: "Asha@X.edu", roll_no: "22CS101" }, { email: null, roll_no: " 22EC7 " }];
+  it("drops an email match, case-insensitively", () => {
+    const r = dedupeMembers([{ email: "asha@x.edu", roll_no: null }, { email: "new@x.edu", roll_no: null }], existing);
+    expect(r.duplicates).toBe(1);
+    expect(r.fresh.map((m) => m.email)).toEqual(["new@x.edu"]);
+  });
+  it("matches by roll number when there is no email", () => {
+    const r = dedupeMembers([{ email: null, roll_no: "22ec7" }, { email: null, roll_no: "22EC8" }], existing);
+    expect(r.duplicates).toBe(1);
+    expect(r.fresh).toHaveLength(1);
+  });
+  it("drops in-batch duplicates", () => {
+    const r = dedupeMembers([{ email: "a@x.edu" }, { email: "A@x.edu" }, { email: null, roll_no: "9" }, { email: null, roll_no: "9" }], []);
+    expect(r.duplicates).toBe(2);
+    expect(r.fresh).toHaveLength(2);
+  });
+  it("always keeps rows with no keys", () => {
+    const r = dedupeMembers([{ email: null, roll_no: null }, { email: "", roll_no: "" }], existing);
+    expect(r.duplicates).toBe(0);
+    expect(r.fresh).toHaveLength(2);
   });
 });

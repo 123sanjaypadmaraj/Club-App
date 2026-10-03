@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton, SubmitButton } from "@/components/SubmitButton";
 import { Empty, Field, Notice, PageHeader } from "@/components/ui";
-import { assignLeadAction, createLeadAction, resetLeadPasswordAction, unassignLeadAction } from "@/app/dashboard/actions";
+import { assignLeadAction, createLeadAction, deleteLeadAction, resetLeadPasswordAction, unassignLeadAction } from "@/app/dashboard/actions";
 
 export const metadata = { title: "Club leads" };
 
@@ -76,6 +76,9 @@ export default async function LeadsPage({ searchParams }: PageProps<"/dashboard/
                     <ConfirmButton message={`Reset the password for ${l.email}?`} className="btn">Reset</ConfirmButton>
                   </form>
                 </details>
+                <form action={deleteLeadAction.bind(null, l.id)} className="mt-3">
+                  <ConfirmButton message={`Delete ${l.email}? They will no longer be able to sign in.`} className="text-sm text-red-600 hover:underline">Delete account</ConfirmButton>
+                </form>
               </div>
             );
           })}

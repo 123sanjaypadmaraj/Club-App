@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getManagedClubs, getProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { csvResponse, toCsv } from "@/lib/csv";
+import { logActionError } from "@/lib/log";
 import type { Member } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
@@ -11,7 +12,11 @@ export async function GET(req: NextRequest) {
   if (!club) return new Response("Forbidden", { status: 403 });
 
   const supabase = await createClient();
-  const { data } = await supabase.from("club_members").select("*").eq("club_id", club.id).order("full_name");
+  const { data, error } = await supabase.from("club_members").select("*").eq("club_id", club.id).order("full_name");
+  if (error) {
+    logActionError("exportMembers", error, { slug });
+    return new Response("Something went wrong", { status: 500 });
+  }
   const rows = ((data as Member[]) ?? []).map((m) => ({
     Name: m.full_name,
     Email: m.email,
