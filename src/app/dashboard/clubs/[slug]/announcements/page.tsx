@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton, SubmitButton } from "@/components/SubmitButton";
 import { Empty, Field, Notice, PageHeader } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
-import { addAnnouncementAction, deleteAnnouncementAction } from "@/app/dashboard/actions";
+import { addAnnouncementAction, deleteAnnouncementAction, toggleAnnouncementPinAction } from "@/app/dashboard/actions";
 import type { Announcement } from "@/lib/types";
 
 export const metadata = { title: "Announcements" };
@@ -35,9 +35,14 @@ export default async function AnnouncementsTab({ params, searchParams }: PagePro
                 <p className="text-xs text-muted">{fmtDate(a.created_at)}</p>
                 {a.body && <p className="mt-1 whitespace-pre-line text-sm">{a.body}</p>}
               </div>
-              <form action={deleteAnnouncementAction.bind(null, slug, a.id)}>
-                <ConfirmButton message="Delete this announcement?" className="text-sm text-red-600 hover:underline">Delete</ConfirmButton>
-              </form>
+              <div className="flex items-center gap-3">
+                <form action={toggleAnnouncementPinAction.bind(null, slug, a.id, !a.pinned)}>
+                  <SubmitButton className="text-sm text-brand hover:underline" pendingText="…">{a.pinned ? "Unpin" : "Pin"}</SubmitButton>
+                </form>
+                <form action={deleteAnnouncementAction.bind(null, slug, a.id)}>
+                  <ConfirmButton message="Delete this announcement?" className="text-sm text-red-600 hover:underline">Delete</ConfirmButton>
+                </form>
+              </div>
             </li>
           ))}
         </ul>

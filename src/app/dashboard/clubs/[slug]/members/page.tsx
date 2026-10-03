@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton, SubmitButton } from "@/components/SubmitButton";
 import { Empty, Field, Notice, PageHeader } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
+import { filterMembers } from "@/lib/members";
+import { pickFilter } from "@/lib/categories";
 import { addMemberAction, importMembersAction, removeMemberAction, setMemberStatusAction } from "@/app/dashboard/actions";
 import type { Member } from "@/lib/types";
 
@@ -16,6 +18,10 @@ export default async function MembersTab({ params, searchParams }: PageProps<"/d
   const { data } = await supabase.from("club_members").select("*").eq("club_id", club.id).order("status").order("full_name").limit(1000);
   const members = (data as Member[]) ?? [];
   const active = members.filter((m) => m.status === "active").length;
+  const q = typeof sp.q === "string" ? sp.q.trim() : "";
+  const status = pickFilter(sp.status, ["active", "alumni", "inactive"]);
+  const shown = filterMembers(members, q, status);
+  const filtered = Boolean(q || status);
 
   return (
     <>
@@ -47,8 +53,25 @@ export default async function MembersTab({ params, searchParams }: PageProps<"/d
         </details>
       </div>
 
+      {members.length > 0 && (
+        <form method="get" className="mb-4 flex flex-wrap items-center gap-2" role="search">
+          <input name="q" defaultValue={q} placeholder="Search name, email, roll no…" aria-label="Search members" className="input max-w-xs" />
+          <select name="status" defaultValue={status} aria-label="Filter by status" className="input max-w-[10rem]">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="alumni">Alumni</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <button className="btn" type="submit">Search</button>
+          {filtered && <a className="text-sm text-brand hover:underline" href={`/dashboard/clubs/${slug}/members`}>Clear</a>}
+          {filtered && <span className="text-sm text-muted">Showing {shown.length} of {members.length}</span>}
+        </form>
+      )}
+
       {members.length === 0 ? (
         <Empty>No members yet.</Empty>
+      ) : shown.length === 0 ? (
+        <Empty>No members match your search.</Empty>
       ) : (
         <div className="card overflow-x-auto !p-0">
           <table className="w-full min-w-[760px]">
@@ -59,7 +82,7 @@ export default async function MembersTab({ params, searchParams }: PageProps<"/d
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {members.map((m) => (
+              {shown.map((m) => (
                 <tr key={m.id} className={m.status === "active" ? "" : "opacity-60"}>
                   <td className="td font-medium">{m.full_name}</td>
                   <td className="td">{m.position}</td>

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loginEmail } from "@/lib/username";
+import { safeNextPath } from "@/lib/redirect";
 
 export async function signIn(formData: FormData) {
   const email = loginEmail(String(formData.get("username") ?? ""));
@@ -12,7 +13,7 @@ export async function signIn(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) redirect(`/login?error=${encodeURIComponent("Invalid username or password.")}`);
   // only allow same-site relative redirects
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard");
+  redirect(safeNextPath(next));
 }
 
 export async function signOut() {

@@ -412,13 +412,26 @@ export async function addAnnouncementAction(slug: string, formData: FormData) {
   const back = `/dashboard/clubs/${slug}/announcements`;
   const title = str(formData.get("title"));
   if (!title) return go(back, "error", "Title is required.");
+  const body = str(formData.get("body"));
+  const tooLong = validateLengths({ title, body });
+  if (tooLong) return go(back, "error", tooLong);
   const supabase = await createClient();
   const { error } = await supabase.from("announcements").insert({
-    club_id: club.id, title, body: str(formData.get("body")), pinned: formData.get("pinned") === "on",
+    club_id: club.id, title, body, pinned: formData.get("pinned") === "on",
   });
   if (error) { logActionError("addAnnouncementAction", error, { slug }); return go(back, "error", "Could not post announcement."); }
   revalidatePath("/", "layout");
   return go(back, "ok", "Announcement posted.");
+}
+
+export async function toggleAnnouncementPinAction(slug: string, id: string, pinned: boolean) {
+  const { club } = await requireClubAccess(slug);
+  const back = `/dashboard/clubs/${slug}/announcements`;
+  const supabase = await createClient();
+  const { error } = await supabase.from("announcements").update({ pinned }).eq("id", id).eq("club_id", club.id);
+  if (error) { logActionError("toggleAnnouncementPinAction", error, { slug, announcementId: id }); return go(back, "error", "Could not update the announcement."); }
+  revalidatePath("/", "layout");
+  return go(back, "ok", pinned ? "Announcement pinned." : "Announcement unpinned.");
 }
 
 export async function deleteAnnouncementAction(slug: string, id: string) {
