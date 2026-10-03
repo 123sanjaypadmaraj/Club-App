@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logActionError } from "@/lib/log";
 import { redirect } from "next/navigation";
 import { requireAdmin, requireClubAccess, requireProfile } from "@/lib/auth";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
@@ -34,7 +35,7 @@ export async function createClubAction(formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.from("clubs").insert({ name, slug, category });
-  if (error) return go("/dashboard/clubs", "error", error.code === "23505" ? "A club with that URL slug already exists." : "Could not create club.");
+  if (error) { logActionError("createClubAction", error); return go("/dashboard/clubs", "error", error.code === "23505" ? "A club with that URL slug already exists." : "Could not create club."); }
   revalidatePath("/", "layout");
   redirect(`/dashboard/clubs/${slug}/settings?ok=${encodeURIComponent("Club created — fill in its details.")}`);
 }
@@ -68,7 +69,7 @@ export async function saveClubAction(slug: string, formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.from("clubs").update(patch).eq("id", club.id);
-  if (error) return go(back, "error", "Could not save changes.");
+  if (error) { logActionError("saveClubAction", error); return go(back, "error", "Could not save changes."); }
   revalidatePath("/", "layout");
   return go(back, "ok", "Club settings saved.");
 }
@@ -106,12 +107,12 @@ export async function saveEventAction(slug: string, eventId: string | null, form
   const supabase = await createClient();
   if (eventId) {
     const { error } = await supabase.from("events").update(row).eq("id", eventId).eq("club_id", club.id);
-    if (error) return go(back, "error", "Could not save event.");
+    if (error) { logActionError("saveEventAction", error); return go(back, "error", "Could not save event."); }
     revalidatePath("/", "layout");
     return go(back, "ok", "Event saved.");
   }
   const { data, error } = await supabase.from("events").insert({ ...row, club_id: club.id }).select("id").single();
-  if (error || !data) return go(back, "error", "Could not create event.");
+  if (error || !data) { logActionError("saveEventAction", error); return go(back, "error", "Could not create event."); }
   revalidatePath("/", "layout");
   return go(`/dashboard/clubs/${slug}/events/${data.id}`, "ok", "Event created.");
 }
@@ -120,7 +121,7 @@ export async function deleteEventAction(slug: string, eventId: string) {
   const { club } = await requireClubAccess(slug);
   const supabase = await createClient();
   const { error } = await supabase.from("events").delete().eq("id", eventId).eq("club_id", club.id);
-  if (error) return go(`/dashboard/clubs/${slug}/events/${eventId}`, "error", "Could not delete event.");
+  if (error) { logActionError("deleteEventAction", error); return go(`/dashboard/clubs/${slug}/events/${eventId}`, "error", "Could not delete event."); }
   revalidatePath("/", "layout");
   return go(`/dashboard/clubs/${slug}/events`, "ok", "Event deleted.");
 }
@@ -146,7 +147,7 @@ export async function addParticipantAction(slug: string, eventId: string, formDa
     attended: formData.get("attended") === "on",
     attended_at: formData.get("attended") === "on" ? new Date().toISOString() : null,
   });
-  if (error) return go(back, "error", error.code === "23505" ? "That email is already registered." : "Could not add participant.");
+  if (error) { logActionError("addParticipantAction", error); return go(back, "error", error.code === "23505" ? "That email is already registered." : "Could not add participant."); }
   return go(back, "ok", "Participant added.");
 }
 
@@ -157,7 +158,7 @@ export async function duplicateEventAction(slug: string, eventId: string) {
   const { data: src } = await supabase.from("events").select("*").eq("id", eventId).eq("club_id", club.id).maybeSingle();
   if (!src) return go(`/dashboard/clubs/${slug}/events`, "error", "Event not found.");
   const { data, error } = await supabase.from("events").insert(duplicateEventRow(src as ClubEvent)).select("id").single();
-  if (error || !data) return go(back, "error", "Could not duplicate the event.");
+  if (error || !data) { logActionError("duplicateEventAction", error); return go(back, "error", "Could not duplicate the event."); }
   revalidatePath("/", "layout");
   return go(`/dashboard/clubs/${slug}/events/${data.id}`, "ok", "Event duplicated as draft");
 }
@@ -170,7 +171,7 @@ export async function toggleAttendanceAction(slug: string, eventId: string, regI
     .update({ attended, attended_at: attended ? new Date().toISOString() : null })
     .eq("id", regId)
     .eq("event_id", eventId);
-  if (error) return go(`/dashboard/clubs/${slug}/events/${eventId}`, "error", "Could not update attendance.");
+  if (error) { logActionError("toggleAttendanceAction", error); return go(`/dashboard/clubs/${slug}/events/${eventId}`, "error", "Could not update attendance."); }
   revalidatePath(`/dashboard/clubs/${slug}/events/${eventId}`);
 }
 
@@ -178,7 +179,7 @@ export async function removeParticipantAction(slug: string, eventId: string, reg
   await requireClubAccess(slug);
   const supabase = await createClient();
   const { error } = await supabase.from("event_registrations").delete().eq("id", regId).eq("event_id", eventId);
-  if (error) return go(`/dashboard/clubs/${slug}/events/${eventId}`, "error", "Could not remove the participant.");
+  if (error) { logActionError("removeParticipantAction", error); return go(`/dashboard/clubs/${slug}/events/${eventId}`, "error", "Could not remove the participant."); }
   revalidatePath(`/dashboard/clubs/${slug}/events/${eventId}`);
 }
 
@@ -197,7 +198,7 @@ export async function loadRegistrationsAction(slug: string, eventId: string): Pr
   if (!UUID.test(eventId)) return { ok: false, error: "Bad event." };
   const supabase = await createClient();
   const { data, error } = await supabase.from("event_registrations").select("*").eq("event_id", eventId).order("registered_at");
-  if (error) return { ok: false, error: "Could not load participants." };
+  if (error) { logActionError("loadRegistrationsAction", error); return { ok: false, error: "Could not load participants." }; }
   return { ok: true, rows: (data as Registration[]) ?? [] };
 }
 
@@ -214,7 +215,7 @@ export async function setAttendanceAction(
     .update({ attended, attended_at, checked_in_by: attended ? profile.id : null })
     .eq("id", regId).eq("event_id", eventId).eq("status", "confirmed")
     .select("id");
-  if (error || !data?.length) return { ok: false, error: "Could not update — is this person on the waitlist?" };
+  if (error || !data?.length) { logActionError("setAttendanceAction", error); return { ok: false, error: "Could not update — is this person on the waitlist?" }; }
   return { ok: true, attended, attended_at };
 }
 
@@ -237,7 +238,7 @@ export async function checkInByCodeAction(slug: string, eventId: string, input: 
   const at = nowIso();
   const { error } = await supabase
     .from("event_registrations").update({ attended: true, attended_at: at, checked_in_by: profile.id }).eq("id", reg.id);
-  if (error) return { ok: false, error: "Could not check in. Try again." };
+  if (error) { logActionError("checkInByCodeAction", error); return { ok: false, error: "Could not check in. Try again." }; }
   return { ok: true, result: "checked_in", id: reg.id, name: reg.full_name, at };
 }
 
@@ -266,7 +267,7 @@ export async function walkInAction(
     attended_at: nowIso(),
     checked_in_by: profile.id,
   }).select("*").single();
-  if (error || !data) return { ok: false, error: error?.code === "23505" ? "That email is already registered — search for them instead." : "Could not add them." };
+  if (error || !data) { logActionError("walkInAction", error); return { ok: false, error: error?.code === "23505" ? "That email is already registered — search for them instead." : "Could not add them." }; }
   return { ok: true, row: data as Registration };
 }
 
@@ -292,7 +293,7 @@ export async function bulkParticipantsAction(
     res = await t().update({ attended: false, attended_at: null, checked_in_by: null })
       .in("id", clean).eq("event_id", eventId).eq("attended", true).select("id");
   }
-  if (res.error) return { ok: false, error: "That didn't work. Nothing was changed." };
+  if (res.error) { logActionError("bulkParticipantsAction", res.error); return { ok: false, error: "That didn't work. Nothing was changed." }; }
   revalidatePath(`/dashboard/clubs/${slug}/events/${eventId}`);
   return { ok: true, count: res.data?.length ?? 0 };
 }
@@ -317,7 +318,7 @@ export async function importParticipantsAction(slug: string, eventId: string, fo
   const { error } = await supabase.from("event_registrations").insert(
     fresh.map((r) => ({ ...r, event_id: eventId, ticket_code: newTicketCode(), status: "confirmed" })),
   );
-  if (error) return go(back, "error", "Import failed — nothing was added.");
+  if (error) { logActionError("importParticipantsAction", error); return go(back, "error", "Import failed — nothing was added."); }
   revalidatePath(back);
   const notes = [already && `${already} already registered`, duplicates && `${duplicates} duplicate`, invalid && `${invalid} invalid`].filter(Boolean).join(", ");
   return go(back, "ok", `Imported ${fresh.length} participants.${notes ? ` Skipped: ${notes}.` : ""}`);
@@ -346,7 +347,7 @@ export async function addMemberAction(slug: string, formData: FormData) {
     phone: str(formData.get("phone")),
     position: str(formData.get("position")) ?? "Member",
   });
-  if (error) return go(back, "error", "Could not add member.");
+  if (error) { logActionError("addMemberAction", error); return go(back, "error", "Could not add member."); }
   return go(back, "ok", "Member added.");
 }
 
@@ -376,7 +377,7 @@ export async function importMembersAction(slug: string, formData: FormData) {
   if (rows.length > 500) return go(back, "error", "Please import at most 500 rows at a time.");
   const supabase = await createClient();
   const { error } = await supabase.from("club_members").insert(rows);
-  if (error) return go(back, "error", "Import failed — nothing was added.");
+  if (error) { logActionError("importMembersAction", error); return go(back, "error", "Import failed — nothing was added."); }
   return go(back, "ok", `Imported ${rows.length} members.${skipped ? ` Skipped ${skipped} row(s) with an invalid email.` : ""}`);
 }
 
@@ -384,7 +385,7 @@ export async function setMemberStatusAction(slug: string, memberId: string, stat
   const { club } = await requireClubAccess(slug);
   const supabase = await createClient();
   const { error } = await supabase.from("club_members").update({ status }).eq("id", memberId).eq("club_id", club.id);
-  if (error) return go(`/dashboard/clubs/${slug}/members`, "error", "Could not update the member's status.");
+  if (error) { logActionError("setMemberStatusAction", error); return go(`/dashboard/clubs/${slug}/members`, "error", "Could not update the member's status."); }
   revalidatePath(`/dashboard/clubs/${slug}/members`);
 }
 
@@ -392,7 +393,7 @@ export async function removeMemberAction(slug: string, memberId: string) {
   const { club } = await requireClubAccess(slug);
   const supabase = await createClient();
   const { error } = await supabase.from("club_members").delete().eq("id", memberId).eq("club_id", club.id);
-  if (error) return go(`/dashboard/clubs/${slug}/members`, "error", "Could not remove the member.");
+  if (error) { logActionError("removeMemberAction", error); return go(`/dashboard/clubs/${slug}/members`, "error", "Could not remove the member."); }
   revalidatePath(`/dashboard/clubs/${slug}/members`);
 }
 
@@ -407,7 +408,7 @@ export async function addAnnouncementAction(slug: string, formData: FormData) {
   const { error } = await supabase.from("announcements").insert({
     club_id: club.id, title, body: str(formData.get("body")), pinned: formData.get("pinned") === "on",
   });
-  if (error) return go(back, "error", "Could not post announcement.");
+  if (error) { logActionError("addAnnouncementAction", error); return go(back, "error", "Could not post announcement."); }
   revalidatePath("/", "layout");
   return go(back, "ok", "Announcement posted.");
 }
@@ -416,7 +417,7 @@ export async function deleteAnnouncementAction(slug: string, id: string) {
   const { club } = await requireClubAccess(slug);
   const supabase = await createClient();
   const { error } = await supabase.from("announcements").delete().eq("id", id).eq("club_id", club.id);
-  if (error) return go(`/dashboard/clubs/${slug}/announcements`, "error", "Could not delete the announcement.");
+  if (error) { logActionError("deleteAnnouncementAction", error); return go(`/dashboard/clubs/${slug}/announcements`, "error", "Could not delete the announcement."); }
   revalidatePath("/", "layout");
 }
 
@@ -437,15 +438,16 @@ export async function createLeadAction(formData: FormData) {
     email, password, email_confirm: true, user_metadata: { full_name: full_name ?? email.split("@")[0] },
   });
   if (error || !data.user) {
+    logActionError("createLeadAction", error);
     return go(back, "error", /already|registered/i.test(error?.message ?? "") ? "An account with that email already exists — assign it to a club below instead." : "Could not create the account.");
   }
   if (full_name) {
     const { error: nameErr } = await svc.from("profiles").update({ full_name }).eq("id", data.user.id);
-    if (nameErr) return go(back, "error", `Account created for ${email}, but saving the name failed.`);
+    if (nameErr) { logActionError("createLeadAction", nameErr); return go(back, "error", `Account created for ${email}, but saving the name failed.`); }
   }
   if (clubIds.length) {
     const { error: assignErr } = await svc.from("club_leads").insert(clubIds.map((club_id) => ({ club_id, user_id: data.user.id })));
-    if (assignErr) return go(back, "error", "Account created but club assignment failed — assign it below.");
+    if (assignErr) { logActionError("createLeadAction", assignErr); return go(back, "error", "Account created but club assignment failed — assign it below."); }
   }
   revalidatePath("/dashboard/leads");
   return go(back, "ok", `Lead account created for ${email}.`);
@@ -458,7 +460,7 @@ export async function assignLeadAction(formData: FormData) {
   if (!userId || !clubId) return go("/dashboard/leads", "error", "Pick a club.");
   const supabase = await createClient();
   const { error } = await supabase.from("club_leads").upsert({ club_id: clubId, user_id: userId });
-  if (error) return go("/dashboard/leads", "error", "Could not assign the lead to that club.");
+  if (error) { logActionError("assignLeadAction", error); return go("/dashboard/leads", "error", "Could not assign the lead to that club."); }
   revalidatePath("/dashboard/leads");
 }
 
@@ -466,7 +468,7 @@ export async function unassignLeadAction(userId: string, clubId: string) {
   await requireAdmin();
   const supabase = await createClient();
   const { error } = await supabase.from("club_leads").delete().eq("user_id", userId).eq("club_id", clubId);
-  if (error) return go("/dashboard/leads", "error", "Could not unassign the lead.");
+  if (error) { logActionError("unassignLeadAction", error); return go("/dashboard/leads", "error", "Could not unassign the lead."); }
   revalidatePath("/dashboard/leads");
 }
 
@@ -483,8 +485,8 @@ export async function changePasswordAction(formData: FormData) {
 
   const supabase = await createClient();
   const { error: verifyErr } = await supabase.auth.signInWithPassword({ email: profile.email, password: current });
-  if (verifyErr) return go(back, "error", "Current password is incorrect.");
+  if (verifyErr) { logActionError("changePasswordAction", verifyErr); return go(back, "error", "Current password is incorrect."); }
   const { error } = await supabase.auth.updateUser({ password: next });
-  if (error) return go(back, "error", "Could not update the password.");
+  if (error) { logActionError("changePasswordAction", error); return go(back, "error", "Could not update the password."); }
   return go(back, "ok", "Password updated.");
 }

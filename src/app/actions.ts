@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { logActionError } from "@/lib/log";
 import { createClient } from "@/lib/supabase/server";
 import { int, str } from "@/lib/format";
 import { newTicketCode } from "@/lib/tickets";
@@ -34,6 +35,7 @@ export async function registerForEvent(eventId: string, formData: FormData) {
   if (error) {
     if (error.code === "23505") return back("error", "You are already registered for this event.");
     if (error.code === "42501") return back("error", "Registration is closed for this event.");
+    logActionError("registerForEvent", error, { eventId });
     return back("error", "Could not register. Please try again.");
   }
   return redirect(`/ticket/${ticket_code}?new=1`);
@@ -60,6 +62,7 @@ export async function submitFeedback(eventId: string, formData: FormData) {
   if (error) {
     if (error.code === "23505") return back("error", "You've already submitted feedback for this event.");
     if (error.code === "42501") return back("error", "Feedback isn't open for this event yet.");
+    logActionError("submitFeedback", error, { eventId });
     return back("error", "Could not submit feedback. Please try again.");
   }
   return back("ok", "Thanks for your feedback!");
