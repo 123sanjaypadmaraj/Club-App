@@ -53,6 +53,11 @@ export default async function EventAdminPage({ params, searchParams }: PageProps
       </div>
       <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
 
+      <section id="edit" className="scroll-mt-4">
+        <h2 className="mb-3 text-lg font-semibold">Event details</h2>
+        <EventForm action={saveEventAction.bind(null, slug, event.id)} event={event} />
+      </section>
+
       <div className="card flex flex-wrap items-center gap-4 border-brand/40 bg-brand/5">
         <div className="mr-auto">
           <h2 className="text-lg font-semibold">Event day</h2>
@@ -148,11 +153,6 @@ export default async function EventAdminPage({ params, searchParams }: PageProps
           </div>
         </section>
       )}
-
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Event details</h2>
-        <EventForm action={saveEventAction.bind(null, slug, event.id)} event={event} />
-      </section>
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Feedback ({feedback.length})</h2>

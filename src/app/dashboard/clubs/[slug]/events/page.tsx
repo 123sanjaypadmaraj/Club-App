@@ -25,7 +25,7 @@ export default async function EventsTab({ params, searchParams }: PageProps<"/da
             <thead>
               <tr className="border-b border-line">
                 <th className="th">Event</th><th className="th">Date</th><th className="th">Status</th>
-                <th className="th text-right">Registered</th><th className="th text-right">Attended</th><th className="th">Rating</th>
+                <th className="th text-right">Registered</th><th className="th text-right">Attended</th><th className="th">Rating</th><th className="th"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -37,6 +37,7 @@ export default async function EventsTab({ params, searchParams }: PageProps<"/da
                   <td className="td text-right tabular-nums">{fmtNum(e.registrations)}{e.capacity ? ` / ${e.capacity}` : ""}</td>
                   <td className="td text-right tabular-nums">{fmtNum(e.attendees)}</td>
                   <td className="td"><Stars value={e.avg_rating == null ? null : Number(e.avg_rating)} /> <span className="text-xs text-muted">({e.feedback_count})</span></td>
+                  <td className="td text-right"><Link href={`/dashboard/clubs/${slug}/events/${e.event_id}#edit`} className="btn !py-1">Edit</Link></td>
                 </tr>
               ))}
             </tbody>
