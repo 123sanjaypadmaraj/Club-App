@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton, SubmitButton } from "@/components/SubmitButton";
 import { Empty, Field, Notice, PageHeader } from "@/components/ui";
-import { assignLeadAction, createLeadAction, deleteLeadAction, resetLeadPasswordAction, unassignLeadAction } from "@/app/dashboard/actions";
+import { assignLeadAction, clearLeadMfaAction, createLeadAction, deleteLeadAction, resetLeadPasswordAction, unassignLeadAction } from "@/app/dashboard/actions";
 
 export const metadata = { title: "Club leads" };
 
@@ -29,7 +29,7 @@ export default async function LeadsPage({ searchParams }: PageProps<"/dashboard/
         <form action={createLeadAction} className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Full name"><input name="full_name" className="input" /></Field>
           <Field label="Email *"><input name="email" type="email" required className="input" /></Field>
-          <Field label="Temporary password *" hint="Min 8 characters. Share it with the lead — they can keep using it."><input name="password" type="text" minLength={8} required className="input" autoComplete="off" /></Field>
+          <Field label="Temporary password *" hint="Min 12 characters, nothing obvious. Share it privately; the lead should change it on first login."><input name="password" type="text" minLength={12} required className="input" autoComplete="off" /></Field>
           <fieldset className="sm:col-span-2">
             <legend className="label">Manages</legend>
             <div className="grid max-h-48 gap-1 overflow-y-auto rounded-lg border border-line p-3 sm:grid-cols-2">
@@ -72,10 +72,13 @@ export default async function LeadsPage({ searchParams }: PageProps<"/dashboard/
                   <summary className="cursor-pointer text-sm text-muted hover:text-foreground">Reset password</summary>
                   <form action={resetLeadPasswordAction} className="mt-2 flex gap-2">
                     <input type="hidden" name="user_id" value={l.id} />
-                    <input name="password" type="text" minLength={8} required autoComplete="off" placeholder="New password (min 8)" aria-label={`New password for ${l.email}`} className="input max-w-xs" />
+                    <input name="password" type="text" minLength={12} required autoComplete="off" placeholder="New password (min 12)" aria-label={`New password for ${l.email}`} className="input max-w-xs" />
                     <ConfirmButton message={`Reset the password for ${l.email}?`} className="btn">Reset</ConfirmButton>
                   </form>
                 </details>
+                <form action={clearLeadMfaAction.bind(null, l.id)} className="mt-3">
+                  <ConfirmButton message={`Clear two-step login for ${l.email}? Use this if they lost their phone.`} className="text-sm text-muted hover:underline">Clear 2FA</ConfirmButton>
+                </form>
                 <form action={deleteLeadAction.bind(null, l.id)} className="mt-3">
                   <ConfirmButton message={`Delete ${l.email}? They will no longer be able to sign in.`} className="text-sm text-red-600 hover:underline">Delete account</ConfirmButton>
                 </form>

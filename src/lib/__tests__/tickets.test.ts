@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { newTicketCode, parseTicketCode } from "@/lib/tickets";
 
 describe("tickets", () => {
-  it("generates 10-char codes without ambiguous characters", () => {
-    for (let i = 0; i < 200; i++) expect(newTicketCode()).toMatch(/^[A-HJKMNP-Z2-9]{10}$/);
+  it("generates 16-char codes without ambiguous characters", () => {
+    for (let i = 0; i < 200; i++) expect(newTicketCode()).toMatch(/^[A-HJKMNP-Z2-9]{16}$/);
   });
   it("generates distinct codes", () => {
     expect(new Set(Array.from({ length: 500 }, newTicketCode)).size).toBe(500);

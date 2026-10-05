@@ -4,6 +4,7 @@ import { requireClubAccess } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EventForm } from "@/components/EventForm";
 import { ParticipantsTable } from "@/components/ParticipantsTable";
+import { ResponsesSheet } from "@/components/ResponsesSheet";
 import { ConfirmButton, SubmitButton } from "@/components/SubmitButton";
 import { HBars, MiniBars, Stars } from "@/components/charts";
 import { Empty, Field, Notice, Stat } from "@/components/ui";
@@ -116,6 +117,18 @@ export default async function EventAdminPage({ params, searchParams }: PageProps
           <Empty>No registrations yet. Share <code className="rounded bg-black/5 px-1 dark:bg-white/10">{publicUrl}</code> or import a CSV above.</Empty>
         ) : (
           <ParticipantsTable slug={slug} eventId={event.id} eventTitle={event.title} rows={all} />
+        )}
+      </section>
+
+      <section id="responses" className="scroll-mt-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Form responses</h2>
+          {event.responses_sheet_url && <a href={event.responses_sheet_url} target="_blank" rel="noopener noreferrer" className="btn">Open in Google Sheets ↗</a>}
+        </div>
+        {event.responses_sheet_url ? (
+          <ResponsesSheet url={event.responses_sheet_url} />
+        ) : (
+          <Empty>Using a Google Form? Paste the link to its responses sheet under “Form responses sheet” in Event details above, and every answer will show here as a spreadsheet.</Empty>
         )}
       </section>
 

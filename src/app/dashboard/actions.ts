@@ -4,15 +4,18 @@ import { revalidatePath } from "next/cache";
 import { logActionError } from "@/lib/log";
 import { validateLengths } from "@/lib/limits";
 import { redirect } from "next/navigation";
-import { requireAdmin, requireClubAccess, requireProfile } from "@/lib/auth";
+import { requireAdmin, requireClubAccess, requireProfile, requireRecentAdminAuth } from "@/lib/auth";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { parseCsv } from "@/lib/csv";
 import { fromLocalInput, int, safeUrl, str } from "@/lib/format";
 import { duplicateEventRow } from "@/lib/events";
 import { newTicketCode, parseTicketCode } from "@/lib/tickets";
 import { parseParticipantRows, placeholderEmail } from "@/lib/participants";
+import { sheetCsvUrl } from "@/lib/sheets";
 import { dedupeMembers } from "@/lib/members";
-import { validatePasswordChange } from "@/lib/password";
+import { validatePasswordChange, weakPasswordReason } from "@/lib/password";
+import { LIMITS_POLICY, rateLimit } from "@/lib/ratelimit";
+import { audit, AUDIT_ACTIONS } from "@/lib/audit";
 import type { ClubEvent, Registration } from "@/lib/types";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,7 +31,8 @@ const slugify = (s: string) =>
 /* ------------------------------------------------------------------ clubs */
 
 export async function createClubAction(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
+  await requireRecentAdminAuth("/dashboard/clubs");
   const name = str(formData.get("name"));
   const category = str(formData.get("category")) ?? "General";
   if (!name) return go("/dashboard/clubs", "error", "Club name is required.");
@@ -38,6 +42,7 @@ export async function createClubAction(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.from("clubs").insert({ name, slug, category });
   if (error) { logActionError("createClubAction", error); return go("/dashboard/clubs", "error", error.code === "23505" ? "A club with that URL slug already exists." : "Could not create club."); }
+  await audit(admin.id, AUDIT_ACTIONS.clubCreated, slug);
   revalidatePath("/", "layout");
   redirect(`/dashboard/clubs/${slug}/settings?ok=${encodeURIComponent("Club created — fill in its details.")}`);
 }
@@ -81,6 +86,7 @@ export async function saveClubAction(slug: string, formData: FormData) {
   const { error } = await supabase.from("clubs").update(patch).eq("id", club.id);
   if (error) { logActionError("saveClubAction", error, { slug }); return go(back, "error", "Could not save changes."); }
   revalidatePath("/", "layout");
+  if (profile.role === "super_admin" && patch.is_active !== club.is_active) await audit(profile.id, AUDIT_ACTIONS.clubVisibility, slug, { is_active: Boolean(patch.is_active) });
   return go(back, "ok", "Club settings saved.");
 }
 
@@ -102,10 +108,13 @@ export async function saveEventAction(slug: string, eventId: string | null, form
 
   const capacity = int(formData.get("capacity"));
   const status = String(formData.get("status"));
+  const sheetInput = safeUrl(formData.get("responses_sheet_url"));
+  if (sheetInput && !sheetCsvUrl(sheetInput)) return go(back, "error", "The responses sheet must be a Google Sheets link (docs.google.com/spreadsheets/…).");
   const row = {
     title,
     description,
     category: str(formData.get("category")) ?? "Workshop",
+    responses_sheet_url: sheetInput,
     venue,
     starts_at,
     ends_at,
@@ -132,10 +141,11 @@ export async function saveEventAction(slug: string, eventId: string | null, form
 }
 
 export async function deleteEventAction(slug: string, eventId: string) {
-  const { club } = await requireClubAccess(slug);
+  const { club, profile } = await requireClubAccess(slug);
   const supabase = await createClient();
   const { error } = await supabase.from("events").delete().eq("id", eventId).eq("club_id", club.id);
   if (error) { logActionError("deleteEventAction", error, { slug, eventId }); return go(`/dashboard/clubs/${slug}/events/${eventId}`, "error", "Could not delete event."); }
+  await audit(profile.id, AUDIT_ACTIONS.eventDeleted, eventId, { club_id: club.id });
   revalidatePath("/", "layout");
   return go(`/dashboard/clubs/${slug}/events`, "ok", "Event deleted.");
 }
@@ -195,10 +205,11 @@ export async function toggleAttendanceAction(slug: string, eventId: string, regI
 }
 
 export async function removeParticipantAction(slug: string, eventId: string, regId: string) {
-  await requireClubAccess(slug);
+  const { profile } = await requireClubAccess(slug);
   const supabase = await createClient();
   const { error } = await supabase.from("event_registrations").delete().eq("id", regId).eq("event_id", eventId);
   if (error) { logActionError("removeParticipantAction", error, { slug, eventId, regId }); return go(`/dashboard/clubs/${slug}/events/${eventId}`, "error", "Could not remove the participant."); }
+  await audit(profile.id, AUDIT_ACTIONS.participantsRemoved, eventId, { count: 1 });
   revalidatePath(`/dashboard/clubs/${slug}/events/${eventId}`);
 }
 
@@ -315,6 +326,7 @@ export async function bulkParticipantsAction(
       .in("id", clean).eq("event_id", eventId).eq("attended", true).select("id");
   }
   if (res.error) { logActionError("bulkParticipantsAction", res.error, { slug, eventId }); return { ok: false, error: "That didn't work. Nothing was changed." }; }
+  if (op === "remove") await audit(profile.id, AUDIT_ACTIONS.participantsRemoved, eventId, { count: res.data?.length ?? 0 });
   revalidatePath(`/dashboard/clubs/${slug}/events/${eventId}`);
   return { ok: true, count: res.data?.length ?? 0 };
 }
@@ -379,7 +391,7 @@ export async function addMemberAction(slug: string, formData: FormData) {
 
 /** Bulk-add members from pasted CSV rows: name, email, roll no, department, year, phone, position */
 export async function importMembersAction(slug: string, formData: FormData) {
-  const { club } = await requireClubAccess(slug);
+  const { club, profile } = await requireClubAccess(slug);
   const back = `/dashboard/clubs/${slug}/members`;
   const lines = parseCsv(String(formData.get("csv") ?? ""));
   const rows: (MemberInput & { club_id: string })[] = [];
@@ -408,6 +420,7 @@ export async function importMembersAction(slug: string, formData: FormData) {
   if (fresh.length === 0) return go(back, "error", `Everyone in that list is already a member (${duplicates}).`);
   const { error } = await supabase.from("club_members").insert(fresh);
   if (error) { logActionError("importMembersAction", error, { slug }); return go(back, "error", "Import failed — nothing was added."); }
+  await audit(profile.id, AUDIT_ACTIONS.membersImported, club.id, { added: fresh.length, skipped: duplicates + skipped });
   return go(back, "ok", `Imported ${fresh.length} members.${duplicates ? ` Skipped ${duplicates} already on the roster.` : ""}${skipped ? ` Skipped ${skipped} row(s) with an invalid email.` : ""}`);
 }
 
@@ -420,10 +433,11 @@ export async function setMemberStatusAction(slug: string, memberId: string, stat
 }
 
 export async function removeMemberAction(slug: string, memberId: string) {
-  const { club } = await requireClubAccess(slug);
+  const { club, profile } = await requireClubAccess(slug);
   const supabase = await createClient();
   const { error } = await supabase.from("club_members").delete().eq("id", memberId).eq("club_id", club.id);
   if (error) { logActionError("removeMemberAction", error, { slug, memberId }); return go(`/dashboard/clubs/${slug}/members`, "error", "Could not remove the member."); }
+  await audit(profile.id, AUDIT_ACTIONS.memberRemoved, memberId, { club_id: club.id });
   revalidatePath(`/dashboard/clubs/${slug}/members`);
 }
 
@@ -467,14 +481,16 @@ export async function deleteAnnouncementAction(slug: string, id: string) {
 /* ------------------------------------------------------------ club leads */
 
 export async function createLeadAction(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
+  await requireRecentAdminAuth("/dashboard/leads");
   const back = "/dashboard/leads";
   const email = str(formData.get("email"))?.toLowerCase();
   const full_name = str(formData.get("full_name"));
   const password = String(formData.get("password") ?? "");
   const clubIds = formData.getAll("clubs").map(String);
   if (!email || !EMAIL.test(email)) return go(back, "error", "A valid email is required.");
-  if (password.length < 8) return go(back, "error", "Password must be at least 8 characters.");
+  const weak = weakPasswordReason(password, email);
+  if (weak) return go(back, "error", weak);
 
   const svc = createServiceClient();
   const { data, error } = await svc.auth.admin.createUser({
@@ -492,28 +508,32 @@ export async function createLeadAction(formData: FormData) {
     const { error: assignErr } = await svc.from("club_leads").insert(clubIds.map((club_id) => ({ club_id, user_id: data.user.id })));
     if (assignErr) { logActionError("createLeadAction", assignErr); return go(back, "error", "Account created but club assignment failed — assign it below."); }
   }
+  await audit(admin.id, AUDIT_ACTIONS.leadCreated, data.user.id, { clubs: clubIds.length });
   revalidatePath("/dashboard/leads");
   return go(back, "ok", `Lead account created for ${email}.`);
 }
 
 export async function resetLeadPasswordAction(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
+  await requireRecentAdminAuth("/dashboard/leads");
   const back = "/dashboard/leads";
   const userId = String(formData.get("user_id") ?? "");
   const password = String(formData.get("password") ?? "");
   if (!UUID.test(userId)) return go(back, "error", "Pick a lead.");
-  if (password.length < 8) return go(back, "error", "Password must be at least 8 characters.");
-
   const svc = createServiceClient();
   const { data: target } = await svc.from("profiles").select("email, role").eq("id", userId).maybeSingle();
   if (!target || target.role !== "club_lead") return go(back, "error", "Only club lead accounts can be reset here.");
+  const weak = weakPasswordReason(password, target.email ?? "");
+  if (weak) return go(back, "error", weak);
   const { error } = await svc.auth.admin.updateUserById(userId, { password });
   if (error) { logActionError("resetLeadPasswordAction", error, { userId }); return go(back, "error", "Could not reset the password."); }
+  await audit(admin.id, AUDIT_ACTIONS.leadPasswordReset, userId);
   return go(back, "ok", `Password reset for ${target.email}.`);
 }
 
 export async function deleteLeadAction(userId: string) {
-  await requireAdmin();
+  const admin = await requireAdmin();
+  await requireRecentAdminAuth("/dashboard/leads");
   const back = "/dashboard/leads";
   if (!UUID.test(userId)) return go(back, "error", "Pick a lead.");
   const svc = createServiceClient();
@@ -521,15 +541,34 @@ export async function deleteLeadAction(userId: string) {
   if (!target || target.role !== "club_lead") return go(back, "error", "Only club lead accounts can be deleted here.");
   const { error } = await svc.auth.admin.deleteUser(userId);
   if (error) { logActionError("deleteLeadAction", error, { userId }); return go(back, "error", "Could not delete the account."); }
+  await audit(admin.id, AUDIT_ACTIONS.leadDeleted, userId);
   revalidatePath("/dashboard/leads");
   return go(back, "ok", `Deleted the account for ${target.email}.`);
+}
+
+export async function clearLeadMfaAction(userId: string) {
+  const admin = await requireAdmin();
+  await requireRecentAdminAuth("/dashboard/leads");
+  const back = "/dashboard/leads";
+  if (!UUID.test(userId)) return go(back, "error", "Pick a lead.");
+  const svc = createServiceClient();
+  const { data: target } = await svc.from("profiles").select("email, role").eq("id", userId).maybeSingle();
+  if (!target || target.role !== "club_lead") return go(back, "error", "Only club lead accounts can be changed here.");
+  const { data, error } = await svc.auth.admin.mfa.listFactors({ userId });
+  if (error) { logActionError("clearLeadMfaAction", error, { userId }); return go(back, "error", "Could not read their authenticators."); }
+  for (const f of data?.factors ?? []) {
+    const { error: delErr } = await svc.auth.admin.mfa.deleteFactor({ id: f.id, userId });
+    if (delErr) { logActionError("clearLeadMfaAction", delErr, { userId }); return go(back, "error", "Could not clear two-step login."); }
+  }
+  await audit(admin.id, AUDIT_ACTIONS.leadMfaCleared, userId, { factors: data?.factors?.length ?? 0 });
+  return go(back, "ok", `Two-step login cleared for ${target.email}. They can set it up again from My account.`);
 }
 
 export async function assignLeadAction(formData: FormData) {
   await requireAdmin();
   const userId = String(formData.get("user_id"));
   const clubId = String(formData.get("club_id"));
-  if (!userId || !clubId) return go("/dashboard/leads", "error", "Pick a club.");
+  if (!UUID.test(userId) || !UUID.test(clubId)) return go("/dashboard/leads", "error", "Pick a club.");
   const supabase = await createClient();
   const { error } = await supabase.from("club_leads").upsert({ club_id: clubId, user_id: userId });
   if (error) { logActionError("assignLeadAction", error); return go("/dashboard/leads", "error", "Could not assign the lead to that club."); }
@@ -538,6 +577,7 @@ export async function assignLeadAction(formData: FormData) {
 
 export async function unassignLeadAction(userId: string, clubId: string) {
   await requireAdmin();
+  if (!UUID.test(userId) || !UUID.test(clubId)) return go("/dashboard/leads", "error", "Pick a club.");
   const supabase = await createClient();
   const { error } = await supabase.from("club_leads").delete().eq("user_id", userId).eq("club_id", clubId);
   if (error) { logActionError("unassignLeadAction", error, { userId, clubId }); return go("/dashboard/leads", "error", "Could not unassign the lead."); }
@@ -551,8 +591,10 @@ export async function changePasswordAction(formData: FormData) {
   const back = "/dashboard/account";
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
-  const invalid = validatePasswordChange(current, next, String(formData.get("confirm") ?? ""));
+  const invalid = validatePasswordChange(current, next, String(formData.get("confirm") ?? ""), profile.email ?? "");
   if (invalid) return go(back, "error", invalid);
+  // the current-password check is itself a password oracle, so throttle it per account
+  if (!(await rateLimit("password", profile.id, LIMITS_POLICY.password.max, LIMITS_POLICY.password.window))) return go(back, "error", "Too many attempts. Please wait a few minutes and try again.");
   if (!profile.email) return go(back, "error", "Your account has no email on file.");
 
   const supabase = await createClient();
@@ -560,5 +602,8 @@ export async function changePasswordAction(formData: FormData) {
   if (verifyErr) { logActionError("changePasswordAction", verifyErr); return go(back, "error", "Current password is incorrect."); }
   const { error } = await supabase.auth.updateUser({ password: next });
   if (error) { logActionError("changePasswordAction", error); return go(back, "error", "Could not update the password."); }
+  // a changed password should end every other session (a stolen session must not outlive it)
+  await supabase.auth.signOut({ scope: "others" });
+  await audit(profile.id, AUDIT_ACTIONS.passwordChanged, profile.id);
   return go(back, "ok", "Password updated.");
 }

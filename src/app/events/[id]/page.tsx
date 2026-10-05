@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/SubmitButton";
+import { Turnstile } from "@/components/Turnstile";
 import { ExtLink, Field, Notice, TintBadge } from "@/components/ui";
 import { fmtDateTime } from "@/lib/format";
 import { eventShareDescription } from "@/lib/events";
@@ -107,6 +108,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
                   </select>
                 </Field>
                 <Field label="Phone"><input name="phone" type="tel" maxLength={20} className="input" autoComplete="tel" /></Field>
+                <div className="sm:col-span-2"><Turnstile /></div>
                 <div className="sm:col-span-2"><SubmitButton pendingText={full ? "Joining…" : "Registering…"}>{full ? "Join waitlist" : "Register"}</SubmitButton></div>
               </form>
             </details>

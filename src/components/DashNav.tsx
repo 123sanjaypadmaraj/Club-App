@@ -9,6 +9,7 @@ export function DashNav({ isAdmin }: { isAdmin: boolean }) {
         { href: "/dashboard", label: "Overview", match: (p: string) => p === "/dashboard" },
         { href: "/dashboard/clubs", label: "Clubs", match: (p: string) => p.startsWith("/dashboard/clubs") },
         { href: "/dashboard/leads", label: "Club leads", match: (p: string) => p.startsWith("/dashboard/leads") },
+        { href: "/dashboard/audit", label: "Audit log", match: (p: string) => p.startsWith("/dashboard/audit") },
       ]
     : [{ href: "/dashboard", label: "My clubs", match: (p: string) => p.startsWith("/dashboard") && !p.startsWith("/dashboard/account") }];
   items.push({ href: "/dashboard/account", label: "Account", match: (p: string) => p.startsWith("/dashboard/account") });

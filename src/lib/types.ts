@@ -34,6 +34,7 @@ export type ClubEvent = {
   ends_at: string | null;
   capacity: number | null;
   registration_url: string | null;
+  responses_sheet_url?: string | null;
   feedback_url: string | null;
   poster_url: string | null;
   registration_open: boolean;

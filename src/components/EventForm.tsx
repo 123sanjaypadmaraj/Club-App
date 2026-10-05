@@ -30,6 +30,11 @@ export function EventForm({ action, event }: { action: (fd: FormData) => Promise
       </Field>
 
       <Field label="External registration form" hint="e.g. Google Form link. Optional — the built-in form works too."><input name="registration_url" defaultValue={event?.registration_url ?? ""} className="input" placeholder="https://forms.gle/…" /></Field>
+      <div className="sm:col-span-2">
+        <Field label="Form responses sheet" hint="Link the Google Sheet your form writes to (Share → Anyone with the link → Viewer). Responses then show as a spreadsheet on this page.">
+          <input name="responses_sheet_url" defaultValue={event?.responses_sheet_url ?? ""} className="input" placeholder="https://docs.google.com/spreadsheets/d/…" />
+        </Field>
+      </div>
       <Field label="External feedback form" hint="Optional — built-in quick feedback is always available after the event starts."><input name="feedback_url" defaultValue={event?.feedback_url ?? ""} className="input" placeholder="https://forms.gle/…" /></Field>
 
       <Field label="Budget allocated (₹)"><input name="budget_allocated" type="number" min={0} step="0.01" defaultValue={event?.budget_allocated ?? 0} className="input" /></Field>

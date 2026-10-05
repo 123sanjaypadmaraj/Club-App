@@ -3,9 +3,9 @@ import { randomBytes } from "node:crypto";
 // No 0/O/1/I/L so codes survive being read aloud or typed from a screenshot.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
-/** 10-char unguessable ticket code (~49 bits). Server-side only. */
+/** 16-char unguessable ticket code (~79 bits). Server-side only. */
 export function newTicketCode(): string {
-  const bytes = randomBytes(10);
+  const bytes = randomBytes(16);
   let out = "";
   for (const b of bytes) out += ALPHABET[b % ALPHABET.length];
   return out;

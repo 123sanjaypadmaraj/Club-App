@@ -15,6 +15,11 @@ export function formatActionError(
   });
 }
 
+/** One-line JSON for security-relevant events (failed logins, throttling, CAPTCHA). Never pass emails, names or passwords. */
+export function logSecurityEvent(event: string, extra: LogExtra = {}): void {
+  console.warn(JSON.stringify({ level: "security", event, ...extra }));
+}
+
 export function logActionError(
   action: string,
   error: { code?: string; message?: string } | null | undefined,

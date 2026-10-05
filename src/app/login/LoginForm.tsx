@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { signIn } from "./actions";
+import { Turnstile } from "@/components/Turnstile";
 
 function Spinner() {
   return <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />;
@@ -81,6 +82,8 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
         </span>
         {caps && <span className="mt-1.5 block text-xs font-medium text-orange-600 dark:text-orange-400">⚠ Caps Lock is on</span>}
       </label>
+
+      <Turnstile />
 
       <Submit />
     </form>

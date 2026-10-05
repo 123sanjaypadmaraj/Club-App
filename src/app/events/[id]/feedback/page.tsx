@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/SubmitButton";
+import { Turnstile } from "@/components/Turnstile";
 import { Field, Notice } from "@/components/ui";
 import { submitFeedback } from "@/app/actions";
 
@@ -43,6 +44,7 @@ export default async function FeedbackPage({ params, searchParams }: PageProps<"
           <Field label="Your email * (one response per person)"><input name="email" type="email" required className="input" /></Field>
           <Field label="Name (optional)"><input name="full_name" maxLength={120} className="input" /></Field>
           <Field label="Comments"><textarea name="comment" rows={4} maxLength={2000} className="input" /></Field>
+          <Turnstile />
           <SubmitButton pendingText="Sending…">Submit feedback</SubmitButton>
         </form>
       )}

@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
-import { getManagedClubs, getProfile } from "@/lib/auth";
+import { adminMfaState, getManagedClubs, getProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { csvResponse, toCsv } from "@/lib/csv";
 import { fmtDateTime } from "@/lib/format";
+import { audit, AUDIT_ACTIONS } from "@/lib/audit";
 import { logActionError } from "@/lib/log";
 
 type Row = {
@@ -15,7 +16,9 @@ type Row = {
 };
 
 export async function GET(req: NextRequest) {
-  if (!(await getProfile())) return new Response("Unauthorized", { status: 401 });
+  const profile = await getProfile();
+  if (!profile) return new Response("Unauthorized", { status: 401 });
+  if (profile.role === "super_admin" && (await adminMfaState()) !== "ok") return new Response("Forbidden", { status: 403 });
   const slug = req.nextUrl.searchParams.get("club") ?? "";
   const club = (await getManagedClubs()).find((c) => c.slug === slug);
   if (!club) return new Response("Forbidden", { status: 403 });
@@ -39,6 +42,7 @@ export async function GET(req: NextRequest) {
     Email: f.email,
     "Submitted at": fmtDateTime(f.created_at),
   }));
+  await audit(profile.id, AUDIT_ACTIONS.exportFeedback, club.id, { rows: rows.length });
   return csvResponse(
     `feedback-${club.slug}.csv`,
     toCsv(rows, ["Event", "Event date", "Rating", "Comment", "Name", "Email", "Submitted at"]),

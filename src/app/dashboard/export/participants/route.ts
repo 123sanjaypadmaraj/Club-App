@@ -1,13 +1,16 @@
 import { NextRequest } from "next/server";
-import { getManagedClubs, getProfile } from "@/lib/auth";
+import { adminMfaState, getManagedClubs, getProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { csvResponse, toCsv } from "@/lib/csv";
+import { audit, AUDIT_ACTIONS } from "@/lib/audit";
 import { logActionError } from "@/lib/log";
 import { displayEmail } from "@/lib/participants";
 import type { Registration } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
-  if (!(await getProfile())) return new Response("Unauthorized", { status: 401 });
+  const profile = await getProfile();
+  if (!profile) return new Response("Unauthorized", { status: 401 });
+  if (profile.role === "super_admin" && (await adminMfaState()) !== "ok") return new Response("Forbidden", { status: 403 });
   const eventId = req.nextUrl.searchParams.get("event") ?? "";
   if (!/^[0-9a-f-]{36}$/i.test(eventId)) return new Response("Bad request", { status: 400 });
 
@@ -38,5 +41,6 @@ export async function GET(req: NextRequest) {
     "Checked in at": r.attended_at,
     "Registered at": r.registered_at,
   }));
+  await audit(profile.id, AUDIT_ACTIONS.exportParticipants, eventId, { rows: rows.length });
   return csvResponse(`participants-${event.title}.csv`, toCsv(rows, ["Name", "Email", "Roll no", "Department", "Year", "Phone", "Status", "Ticket", "Attended", "Checked in at", "Registered at"]));
 }

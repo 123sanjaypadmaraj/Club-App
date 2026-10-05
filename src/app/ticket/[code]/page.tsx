@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PrintButton } from "@/components/PrintButton";
 import { fmtDateTime } from "@/lib/format";
 import { parseTicketCode } from "@/lib/tickets";
+import { clientIp, LIMITS_POLICY, rateLimit } from "@/lib/ratelimit";
 
 export const metadata = { title: "Your ticket", robots: { index: false, follow: false } };
 
@@ -19,6 +20,11 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
   const sp = await searchParams;
   const code = parseTicketCode(raw);
   if (!code) notFound();
+
+  // Ticket codes are bearer secrets: throttle lookups so they cannot be guessed in bulk.
+  if (!(await rateLimit("ticket", await clientIp(), LIMITS_POLICY.ticket.max, LIMITS_POLICY.ticket.window))) {
+    return <p className="mx-auto max-w-md text-center text-sm text-muted">Too many lookups. Please wait a few minutes and try again.</p>;
+  }
 
   const supabase = await createClient();
   const { data } = await supabase.rpc("ticket_lookup", { p_code: code });
