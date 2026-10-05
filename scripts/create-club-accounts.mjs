@@ -51,12 +51,12 @@ for (const c of clubs) {
   let pw = "(unchanged)";
   if (!user) {
     pw = password();
-    const { data, error } = await sb.auth.admin.createUser({ email, password: pw, email_confirm: true, user_metadata: { full_name: fullName } });
+    const { data, error } = await sb.auth.admin.createUser({ email, password: pw, email_confirm: true, user_metadata: { full_name: fullName }, app_metadata: { must_change_password: true } });
     if (error || !data.user) { console.warn(`! ${c.slug}: ${error?.message ?? "could not create user"}`); continue; }
     user = data.user;
   } else if (args.reset) {
     pw = password();
-    const { error } = await sb.auth.admin.updateUserById(user.id, { password: pw });
+    const { error } = await sb.auth.admin.updateUserById(user.id, { password: pw, app_metadata: { must_change_password: true } });
     if (error) { console.warn(`! ${c.slug}: could not reset password — ${error.message}`); continue; }
   }
   await sb.from("profiles").update({ full_name: fullName }).eq("id", user.id);
@@ -67,5 +67,5 @@ for (const c of clubs) {
 }
 
 const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n") + "\n";
-writeFileSync(join(root, "club-accounts.csv"), csv);
+writeFileSync(join(root, "club-accounts.csv"), csv, { mode: 0o600 }); // owner-only: it holds passwords
 console.log(`\nWrote ${rows.length - 1} account(s) to club-accounts.csv — keep it private, it is git-ignored.`);

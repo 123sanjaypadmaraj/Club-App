@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth";
 import { LoginForm } from "./LoginForm";
@@ -14,7 +15,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   if (await getProfile()) redirect("/dashboard");
   const sp = await searchParams;
   const next = typeof sp.next === "string" ? sp.next : "/dashboard";
-  const error = typeof sp.error === "string" ? sp.error : undefined;
+  const error = readFlash(sp).error;
   return (
     <div className="relative mx-auto grid max-w-4xl items-stretch overflow-hidden rounded-2xl border border-line bg-surface shadow-xl shadow-indigo-500/10 animate-rise md:grid-cols-5">
       <aside className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-600 via-fuchsia-600 to-orange-500 p-8 text-white md:col-span-2 md:flex md:flex-col md:justify-between">

@@ -1,5 +1,6 @@
 "use server";
 
+import { flashQuery } from "@/lib/flash";
 import { isEmail } from "@/lib/email";
 import { redirect } from "next/navigation";
 import { logActionError } from "@/lib/log";
@@ -13,11 +14,11 @@ import { verifyTurnstile } from "@/lib/turnstile";
 
 /** Public: register for an event. RLS enforces published / open / capacity. */
 export async function registerForEvent(eventId: string, formData: FormData) {
-  const back = (k: "ok" | "error", msg: string): never => redirect(`/events/${eventId}?${k}=${encodeURIComponent(msg)}`);
+  const back = (k: "ok" | "error", msg: string): never => redirect(`/events/${eventId}?${flashQuery(k, msg)}`);
 
   const ip = await clientIp();
   if (!(await rateLimit("register", ip, LIMITS_POLICY.register.max, LIMITS_POLICY.register.window))) return back("error", "Too many attempts. Please wait a while and try again.");
-  if (!(await verifyTurnstile(formData.get("cf-turnstile-response"), ip))) return back("error", "Please complete the verification and try again.");
+  if (!(await verifyTurnstile(formData.get("cf-turnstile-response"), ip, "register"))) return back("error", "Please complete the verification and try again.");
 
   const full_name = str(formData.get("full_name"));
   const email = str(formData.get("email"))?.toLowerCase() ?? null;
@@ -53,11 +54,11 @@ export async function registerForEvent(eventId: string, formData: FormData) {
 
 /** Public: submit feedback for an event that has started. */
 export async function submitFeedback(eventId: string, formData: FormData) {
-  const back = (k: "ok" | "error", msg: string): never => redirect(`/events/${eventId}/feedback?${k}=${encodeURIComponent(msg)}`);
+  const back = (k: "ok" | "error", msg: string): never => redirect(`/events/${eventId}/feedback?${flashQuery(k, msg)}`);
 
   const ip = await clientIp();
   if (!(await rateLimit("feedback", ip, LIMITS_POLICY.feedback.max, LIMITS_POLICY.feedback.window))) return back("error", "Too many attempts. Please wait a while and try again.");
-  if (!(await verifyTurnstile(formData.get("cf-turnstile-response"), ip))) return back("error", "Please complete the verification and try again.");
+  if (!(await verifyTurnstile(formData.get("cf-turnstile-response"), ip, "feedback"))) return back("error", "Please complete the verification and try again.");
 
   const email = str(formData.get("email"))?.toLowerCase() ?? null;
   const rating = int(formData.get("rating"));

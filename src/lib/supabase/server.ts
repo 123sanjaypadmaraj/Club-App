@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookies";
 
 /** Supabase client bound to the current request's cookies (respects RLS as the logged-in user). */
 export async function createClient() {
@@ -9,11 +10,12 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: SESSION_COOKIE_OPTIONS,
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll(list) {
           try {
-            list.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+            list.forEach(({ name, value, options }) => cookieStore.set(name, value, { ...options, ...SESSION_COOKIE_OPTIONS }));
           } catch {
             // called from a Server Component — safe to ignore, proxy.ts refreshes the session
           }

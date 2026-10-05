@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { requireClubAccess } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton, SubmitButton } from "@/components/SubmitButton";
@@ -26,7 +27,7 @@ export default async function MembersTab({ params, searchParams }: PageProps<"/d
   return (
     <>
       <PageHeader title="Members" subtitle={`${active} active · ${members.length} total`} actions={<a className="btn" href={`/dashboard/export/members?club=${slug}`}>Download CSV</a>} />
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
 
       <div className="mb-6 grid gap-3 lg:grid-cols-2">
         <details className="card">

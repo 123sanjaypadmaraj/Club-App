@@ -1,9 +1,11 @@
+import { applyFlash } from "@/lib/flash";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { loginRedirectTarget } from "@/lib/redirect";
-import { LAST_SEEN_COOKIE, lastSeenCookieOptions, parseLastSeen, sessionExpiry, sessionLimits } from "@/lib/session";
+import { LAST_SEEN_COOKIE, lastSeenCookieOptions, mustChangePassword, parseLastSeen, sessionExpiry, sessionLimits } from "@/lib/session";
 import { logSecurityEvent } from "@/lib/log";
 import { buildCsp } from "@/lib/csp";
+import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookies";
 
 // Refreshes the Supabase session cookie and keeps logged-out users out of /dashboard.
 export async function proxy(request: NextRequest) {
@@ -26,12 +28,13 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: SESSION_COOKIE_OPTIONS,
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll(list) {
           list.forEach(({ name, value }) => request.cookies.set(name, value));
           response = next();
-          list.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          list.forEach(({ name, value, options }) => response.cookies.set(name, value, { ...options, ...SESSION_COOKIE_OPTIONS }));
         },
       },
     },
@@ -61,7 +64,7 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.search = "";
-      url.searchParams.set("error", "Your session expired. Please sign in again.");
+      applyFlash(url, "error", "Your session expired. Please sign in again.");
       url.searchParams.set("next", loginRedirectTarget(request.nextUrl.pathname, request.nextUrl.search));
       const redirect = NextResponse.redirect(url);
       response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
@@ -81,6 +84,13 @@ export async function proxy(request: NextRequest) {
       url.searchParams.set("next", loginRedirectTarget(request.nextUrl.pathname, request.nextUrl.search));
       return withCsp(NextResponse.redirect(url));
     }
+  }
+  if (mustChangePassword(data.user, request.nextUrl.pathname, request.method)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard/account";
+    url.search = "";
+    applyFlash(url, "error", "Please choose a new password before continuing.");
+    return withCsp(NextResponse.redirect(url));
   }
   return withCsp(response);
 }

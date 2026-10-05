@@ -93,6 +93,24 @@ describe("supabase SQL security", () => {
     }
   });
 
+  it("pins club history fields and hides inactive clubs from the public (sections 11 and 12)", () => {
+    const sec = readFileSync(join(dir, "security.sql"), "utf8");
+    const guard = sec.slice(sec.indexOf("create or replace function public.guard_club_admin_fields()"));
+    for (const col of ["slug", "category", "is_active", "created_at"]) expect(guard.slice(0, 700), col).toContain(`new.${col} := old.${col}`);
+    // the replacement read policies must not be "using (true)"
+    for (const policy of ["clubs_select", "events_select", "announcements_select"]) {
+      const at = sec.indexOf(`create policy ${policy}`);
+      expect(at, policy).toBeGreaterThan(-1);
+      const body = sec.slice(at, sec.indexOf(";", at));
+      expect(body, policy).not.toMatch(/using\s*\(\s*true\s*\)/i);
+      expect(body, policy).toMatch(/is_active/);
+    }
+    for (const fn of ["event_accepts_registration", "event_accepts_feedback"]) {
+      const at = sec.lastIndexOf(`create or replace function public.${fn}`);
+      expect(sec.slice(at, at + 600), fn).toContain("c.is_active");
+    }
+  });
+
   it("only allowlisted views are readable by anon, and the public counts view lists published events only", () => {
     const VIEW_ALLOWLIST = new Set(["event_public_counts"]);
     const views = [...sql.matchAll(/grant select on public\.(\w+) to ([^;]*anon[^;]*);/gi)].map((m) => m[1]);

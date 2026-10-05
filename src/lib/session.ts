@@ -29,3 +29,14 @@ export const lastSeenCookieOptions = () => ({
   sameSite: "lax" as const,
   path: "/",
 });
+
+/**
+ * Accounts whose password was set by the admin must choose their own before using the dashboard. The flag lives in
+ * app_metadata, which users cannot edit. Only page loads are redirected; /dashboard/account stays reachable.
+ */
+export function mustChangePassword(user: { app_metadata?: Record<string, unknown> } | null | undefined, pathname: string, method = "GET"): boolean {
+  if (user?.app_metadata?.must_change_password !== true) return false;
+  if (method !== "GET" && method !== "HEAD") return false;
+  if (!pathname.startsWith("/dashboard")) return false;
+  return !(pathname === "/dashboard/account" || pathname.startsWith("/dashboard/account/"));
+}

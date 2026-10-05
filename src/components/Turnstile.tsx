@@ -23,9 +23,12 @@ function loadScript(): Promise<void> {
 
 /**
  * Cloudflare Turnstile CAPTCHA. Renders nothing until NEXT_PUBLIC_TURNSTILE_SITE_KEY is set.
+ * `action` ties the solved token to one form, so a token from the feedback form cannot sign anyone in.
  * Turnstile adds a hidden `cf-turnstile-response` field to the surrounding <form>, which the server action verifies.
  */
-export function Turnstile() {
+export type TurnstileAction = "login" | "register" | "feedback";
+
+export function Turnstile({ action }: { action: TurnstileAction }) {
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,14 +37,14 @@ export function Turnstile() {
     let gone = false;
     loadScript()
       .then(() => {
-        if (!gone && box.current && window.turnstile) widget = window.turnstile.render(box.current, { sitekey: siteKey, theme: "auto" });
+        if (!gone && box.current && window.turnstile) widget = window.turnstile.render(box.current, { sitekey: siteKey, theme: "auto", action });
       })
       .catch(() => {});
     return () => {
       gone = true;
       if (widget && window.turnstile) window.turnstile.remove(widget);
     };
-  }, []);
+  }, [action]);
 
   if (!siteKey) return null;
   return <div ref={box} className="min-h-[65px]" />;

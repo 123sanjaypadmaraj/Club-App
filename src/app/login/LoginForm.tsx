@@ -83,7 +83,7 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
         {caps && <span className="mt-1.5 block text-xs font-medium text-orange-600 dark:text-orange-400">⚠ Caps Lock is on</span>}
       </label>
 
-      <Turnstile />
+      <Turnstile action="login" />
 
       <Submit />
     </form>

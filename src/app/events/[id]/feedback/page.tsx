@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -24,7 +25,7 @@ export default async function FeedbackPage({ params, searchParams }: PageProps<"
     <div className="mx-auto max-w-lg">
       <Link href={`/events/${event.id}`} className="text-sm text-brand hover:underline">← {event.title}</Link>
       <h1 className="mb-4 mt-2 text-2xl font-bold">Feedback</h1>
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
       {!open ? (
         <p className="text-sm text-muted">Feedback opens once the event starts.</p>
       ) : done ? null : (
@@ -44,7 +45,7 @@ export default async function FeedbackPage({ params, searchParams }: PageProps<"
           <Field label="Your email * (one response per person)"><input name="email" type="email" required className="input" /></Field>
           <Field label="Name (optional)"><input name="full_name" maxLength={120} className="input" /></Field>
           <Field label="Comments"><textarea name="comment" rows={4} maxLength={2000} className="input" /></Field>
-          <Turnstile />
+          <Turnstile action="feedback" />
           <SubmitButton pendingText="Sending…">Submit feedback</SubmitButton>
         </form>
       )}

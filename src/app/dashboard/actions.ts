@@ -1,5 +1,6 @@
 "use server";
 
+import { flashQuery } from "@/lib/flash";
 import { LEAD_EVENT_COLUMNS } from "@/lib/eventColumns";
 import { isEmail, MAX_IMPORT_BYTES } from "@/lib/email";
 import { revalidatePath } from "next/cache";
@@ -23,7 +24,7 @@ import type { ClubEvent, Registration } from "@/lib/types";
 
 /** Redirect back with a flash message in the query string. */
 function go(path: string, kind: "ok" | "error", msg: string): never {
-  redirect(`${path}${path.includes("?") ? "&" : "?"}${kind}=${encodeURIComponent(msg)}`);
+  redirect(`${path}${path.includes("?") ? "&" : "?"}${flashQuery(kind, msg)}`);
 }
 
 const slugify = (s: string) =>
@@ -45,7 +46,7 @@ export async function createClubAction(formData: FormData) {
   if (error) { logActionError("createClubAction", error); return go("/dashboard/clubs", "error", error.code === "23505" ? "A club with that URL slug already exists." : "Could not create club."); }
   await audit(admin.id, AUDIT_ACTIONS.clubCreated, slug);
   revalidatePath("/", "layout");
-  redirect(`/dashboard/clubs/${slug}/settings?ok=${encodeURIComponent("Club created — fill in its details.")}`);
+  redirect(`/dashboard/clubs/${slug}/settings?${flashQuery("ok", "Club created — fill in its details.")}`);
 }
 
 export async function saveClubAction(slug: string, formData: FormData) {
@@ -505,6 +506,7 @@ export async function createLeadAction(formData: FormData) {
   const svc = createServiceClient();
   const { data, error } = await svc.auth.admin.createUser({
     email, password, email_confirm: true, user_metadata: { full_name: full_name ?? email.split("@")[0] },
+    app_metadata: { must_change_password: true }, // the admin knows this password: the lead must replace it
   });
   if (error || !data.user) {
     logActionError("createLeadAction", error);
@@ -535,7 +537,7 @@ export async function resetLeadPasswordAction(formData: FormData) {
   if (!target || target.role !== "club_lead") return go(back, "error", "Only club lead accounts can be reset here.");
   const weak = weakPasswordReason(password, target.email ?? "");
   if (weak) return go(back, "error", weak);
-  const { error } = await svc.auth.admin.updateUserById(userId, { password });
+  const { error } = await svc.auth.admin.updateUserById(userId, { password, app_metadata: { must_change_password: true } });
   if (error) { logActionError("resetLeadPasswordAction", error, { userId }); return go(back, "error", "Could not reset the password."); }
   await audit(admin.id, AUDIT_ACTIONS.leadPasswordReset, userId);
   return go(back, "ok", `Password reset for ${target.email}.`);
@@ -612,6 +614,9 @@ export async function changePasswordAction(formData: FormData) {
   if (verifyErr) { logActionError("changePasswordAction", verifyErr); return go(back, "error", "Current password is incorrect."); }
   const { error } = await supabase.auth.updateUser({ password: next });
   if (error) { logActionError("changePasswordAction", error); return go(back, "error", "Could not update the password."); }
+  // they chose their own password now: lift the "must change" flag (a failure here must not hide that the password did change)
+  const { error: flagErr } = await createServiceClient().auth.admin.updateUserById(profile.id, { app_metadata: { must_change_password: false } });
+  if (flagErr) logActionError("changePasswordAction", flagErr, { userId: profile.id });
   // a changed password should end every other session (a stolen session must not outlive it)
   await supabase.auth.signOut({ scope: "others" });
   await audit(profile.id, AUDIT_ACTIONS.passwordChanged, profile.id);

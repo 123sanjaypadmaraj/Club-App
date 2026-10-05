@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton, SubmitButton } from "@/components/SubmitButton";
@@ -22,7 +23,7 @@ export default async function LeadsPage({ searchParams }: PageProps<"/dashboard/
   return (
     <>
       <PageHeader title="Club leads" subtitle="Accounts that can manage their own club's events, participants and members." />
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
 
       <details className="card mb-6" open={leads.length === 0}>
         <summary className="cursor-pointer font-semibold">Create a club lead account</summary>

@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { MfaSetup } from "./MfaSetup";
@@ -20,7 +21,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/dashboar
   return (
     <div className="max-w-md space-y-4">
       <PageHeader title="My account" subtitle={profile.email ?? undefined} />
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
       <section className="card space-y-3">
         <h2 className="font-semibold">Two-step login</h2>
         {mfaOn ? (

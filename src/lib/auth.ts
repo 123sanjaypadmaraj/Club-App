@@ -1,3 +1,4 @@
+import { flashQuery } from "@/lib/flash";
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -37,7 +38,7 @@ export async function requireAdmin(): Promise<Profile> {
   if (p.role !== "super_admin") redirect("/dashboard");
   const mfa = await adminMfaState();
   if (mfa === "verify") redirect("/login/mfa?next=/dashboard");
-  if (mfa === "enroll") redirect("/dashboard/account?error=" + encodeURIComponent("Admin accounts must set up two-step login before using admin pages."));
+  if (mfa === "enroll") redirect("/dashboard/account?" + flashQuery("error", "Admin accounts must set up two-step login before using admin pages."));
   return p;
 }
 
@@ -50,7 +51,7 @@ export async function requireRecentAdminAuth(next: string, maxAgeSec = 900): Pro
   const supabase = await createClient();
   const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (authAgeSeconds(data?.currentAuthenticationMethods, Date.now()) > maxAgeSec) {
-    redirect(`/login/mfa?next=${encodeURIComponent(next)}&error=${encodeURIComponent("Confirm with your authenticator code to continue.")}`);
+    redirect(`/login/mfa?next=${encodeURIComponent(next)}&${flashQuery("error", "Confirm with your authenticator code to continue.")}`);
   }
 }
 
@@ -77,7 +78,7 @@ export async function requireClubAccess(slug: string): Promise<{ profile: Profil
   if (profile.role === "super_admin") {
     const mfa = await adminMfaState();
     if (mfa === "verify") redirect("/login/mfa?next=/dashboard");
-    if (mfa === "enroll") redirect("/dashboard/account?error=" + encodeURIComponent("Admin accounts must set up two-step login before using admin pages."));
+    if (mfa === "enroll") redirect("/dashboard/account?" + flashQuery("error", "Admin accounts must set up two-step login before using admin pages."));
   }
   return { profile, club };
 }

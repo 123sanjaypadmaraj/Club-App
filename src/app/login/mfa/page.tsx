@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth";
 import { safeNextPath } from "@/lib/redirect";
@@ -15,7 +16,7 @@ export default async function MfaPage({ searchParams }: PageProps<"/login/mfa">)
     <div className="card mx-auto max-w-sm space-y-4">
       <h1 className="text-xl font-bold tracking-tight">Two-step login</h1>
       <p className="text-sm text-muted">Open your authenticator app and enter the 6-digit code for Club Hub.</p>
-      <Notice error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice error={readFlash(sp).error} />
       <form action={verifyMfaLoginAction} className="space-y-4">
         <input type="hidden" name="next" value={next} />
         <Field label="6-digit code">

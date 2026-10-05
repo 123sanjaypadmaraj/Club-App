@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -18,7 +19,7 @@ export default async function ClubsAdmin({ searchParams }: PageProps<"/dashboard
   return (
     <>
       <PageHeader title="Clubs" subtitle={`${clubs.length} clubs registered`} />
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
 
       <form action={createClubAction} className="card mb-6 grid items-end gap-4 sm:grid-cols-[1fr_12rem_auto]">
         <Field label="New club name"><input name="name" required maxLength={80} className="input" placeholder="e.g. Astronomy Club" /></Field>

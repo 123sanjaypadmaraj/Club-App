@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { requireClubAccess } from "@/lib/auth";
 import { EventForm } from "@/components/EventForm";
 import { Notice, PageHeader } from "@/components/ui";
@@ -12,7 +13,7 @@ export default async function NewEvent({ params, searchParams }: PageProps<"/das
   return (
     <>
       <PageHeader title="New event" />
-      <Notice error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice error={readFlash(sp).error} />
       <EventForm action={saveEventAction.bind(null, slug, null)} />
     </>
   );

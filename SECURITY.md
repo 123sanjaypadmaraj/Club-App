@@ -26,6 +26,12 @@
 | Roster, announcement, budget, sheet-link and ticket-code rules enforced in the database | `supabase/security.sql` section 9 |
 | Startup check also fails if a service-role key is used as the public key; logs when public sign-ups are open | `src/lib/config-check.ts` |
 | Personal data kept out of logs and audit entries: a test scans every log call, and email addresses in error text are masked | `src/lib/__tests__/log-pii.test.ts`, `src/lib/log.ts` |
+| Session cookies are httpOnly, secure and SameSite=lax (scripts on a page cannot read the refresh token) | `src/lib/supabase/cookies.ts` |
+| Notices shown after actions are signed, so a crafted `?error=` link cannot put fake text (e.g. a fake lockout phone number) on the site | `src/lib/flash.ts` |
+| CAPTCHA tokens are bound to their form (`action`) and to this site's hostname | `src/lib/turnstile.ts` |
+| Leads whose password the admin set or reset must choose their own before using the dashboard; `club-accounts.csv` is written owner-only | `src/proxy.ts`, `scripts/create-club-accounts.mjs` |
+| Deactivating a club hides its page, contact details, events and announcements and stops sign-ups; leads cannot rewrite a club's `created_at`/`id` | `supabase/security.sql` sections 11 and 12 |
+| `.env.example` is committed and a test fails if the code reads an undocumented variable; lockfile entries must come from the npm registry with a sha512 hash; `npm audit signatures` in CI | `src/lib/__tests__/env-documented.test.ts`, `lockfile.test.ts` |
 | Public sign-ups inserted only by the server (function `submit_registration` / `submit_feedback`), so CAPTCHA and rate limits cannot be bypassed via the API | `supabase/security.sql`, `src/app/actions.ts` |
 | Database checks on club/event colours, URLs and lengths; colours and links also re-validated when rendered | `supabase/security.sql`, `src/lib/safe.ts` |
 | Linear-time email check with a 254-character cutoff; 1 MB cap on CSV imports | `src/lib/email.ts` |

@@ -258,3 +258,69 @@ begin
 end $$;
 revoke all on function public.purge_old_event_data(int, int) from public, anon, authenticated;
 grant execute on function public.purge_old_event_data(int, int) to service_role;
+
+-- ---------- 11. Club admin-only fields ---------------------------------------------------------------------
+-- schema.sql already pins slug / category / is_active for non-admins (trigger clubs_guard). Extend the same function to
+-- pin id and created_at too, so a lead cannot rewrite a club's history through the API. Service-role calls
+-- (auth.uid() is null, e.g. seed scripts) and the admin are unaffected. Re-running schema.sql reverts this: run this file after it.
+create or replace function public.guard_club_admin_fields() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() and auth.uid() is not null then
+    new.id := old.id;
+    new.slug := old.slug;
+    new.category := old.category;
+    new.is_active := old.is_active;
+    new.created_at := old.created_at;
+  end if;
+  return new;
+end $$;
+
+-- ---------- 12. Inactive clubs are hidden from the public ----------------------------------------------------
+-- "Club is active (shown publicly)": deactivating a club now hides its page, contact details, events and announcements
+-- from signed-out visitors and stops new sign-ups. The admin and the club's own leads still see everything.
+-- Re-running schema.sql or event_ops.sql reverts this: run this file after them.
+drop policy if exists clubs_select on public.clubs;
+create policy clubs_select on public.clubs for select
+  using (is_active or public.manages_club(id));
+
+drop policy if exists events_select on public.events;
+create policy events_select on public.events for select
+  using (
+    (status = 'published' and exists (select 1 from public.clubs c where c.id = club_id and c.is_active))
+    or public.manages_club(club_id)
+  );
+
+drop policy if exists announcements_select on public.announcements;
+create policy announcements_select on public.announcements for select
+  using (exists (select 1 from public.clubs c where c.id = club_id and c.is_active) or public.manages_club(club_id));
+
+create or replace function public.event_accepts_registration(p_event uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from events e join clubs c on c.id = e.club_id
+    where e.id = p_event
+      and c.is_active
+      and e.status = 'published'
+      and e.registration_open
+      and coalesce(e.ends_at, e.starts_at) > now()
+  );
+$$;
+
+create or replace function public.event_accepts_feedback(p_event uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from events e join clubs c on c.id = e.club_id
+    where e.id = p_event and c.is_active and e.status = 'published' and e.starts_at <= now()
+  );
+$$;
+
+create or replace view public.event_public_counts as
+select r.event_id,
+       (count(*) filter (where r.status = 'confirmed'))::int  as registrations,
+       (count(*) filter (where r.status = 'waitlisted'))::int as waitlisted
+from public.event_registrations r
+join public.events e on e.id = r.event_id and e.status = 'published'
+join public.clubs c on c.id = e.club_id and c.is_active
+group by r.event_id;
+grant select on public.event_public_counts to anon, authenticated;

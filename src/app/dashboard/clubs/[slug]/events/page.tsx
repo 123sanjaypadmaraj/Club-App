@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import Link from "next/link";
 import { requireClubAccess } from "@/lib/auth";
 import { getEventStats } from "@/lib/data";
@@ -16,7 +17,7 @@ export default async function EventsTab({ params, searchParams }: PageProps<"/da
   return (
     <>
       <PageHeader title="Events" subtitle={`${stats.length} total`} actions={<Link href={`/dashboard/clubs/${slug}/events/new`} className="btn btn-primary">+ New event</Link>} />
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
       {stats.length === 0 ? (
         <Empty>No events yet. Create your first one.</Empty>
       ) : (

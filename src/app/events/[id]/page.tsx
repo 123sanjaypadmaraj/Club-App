@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { PUBLIC_EVENT_COLUMNS } from "@/lib/eventColumns";
 import { safeColor } from "@/lib/safe";
 import Link from "next/link";
@@ -60,7 +61,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
           dangerouslySetInnerHTML={{ __html: jsonLdString(eventJsonLd(event, club, siteOrigin(process.env.NEXT_PUBLIC_SITE_URL))) }}
         />
       )}
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
 
       <header className="card" style={{ borderTop: `4px solid ${safeColor(club.accent_color)}` }}>
         <div className="flex flex-wrap items-center gap-2">
@@ -110,7 +111,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
                   </select>
                 </Field>
                 <Field label="Phone"><input name="phone" type="tel" maxLength={20} className="input" autoComplete="tel" /></Field>
-                <div className="sm:col-span-2"><Turnstile /></div>
+                <div className="sm:col-span-2"><Turnstile action="register" /></div>
                 <div className="sm:col-span-2"><SubmitButton pendingText={full ? "Joining…" : "Registering…"}>{full ? "Join waitlist" : "Register"}</SubmitButton></div>
               </form>
             </details>

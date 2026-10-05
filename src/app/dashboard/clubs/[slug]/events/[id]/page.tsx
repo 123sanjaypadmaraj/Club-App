@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { LEAD_EVENT_COLUMNS } from "@/lib/eventColumns";
 import { safeHref } from "@/lib/safe";
 import Link from "next/link";
@@ -64,7 +65,7 @@ export default async function EventAdminPage({ params, searchParams }: PageProps
           </form>
         </div>
       </div>
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
 
       <section id="edit" className="scroll-mt-4">
         <h2 className="mb-3 text-lg font-semibold">Event details</h2>

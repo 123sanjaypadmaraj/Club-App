@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { requireClubAccess } from "@/lib/auth";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Field, Notice, PageHeader } from "@/components/ui";
@@ -14,7 +15,7 @@ export default async function SettingsTab({ params, searchParams }: PageProps<"/
   return (
     <>
       <PageHeader title="Club settings" subtitle="This information appears on the public club page." />
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
       <form action={saveClubAction.bind(null, slug)} className="card grid gap-4 sm:grid-cols-2">
         <Field label="Club name *"><input name="name" required maxLength={80} defaultValue={club.name} className="input" /></Field>
         <Field label="Tagline"><input name="tagline" maxLength={140} defaultValue={club.tagline ?? ""} className="input" /></Field>

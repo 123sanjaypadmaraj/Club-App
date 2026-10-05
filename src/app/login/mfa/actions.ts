@@ -1,5 +1,6 @@
 "use server";
 
+import { flashQuery } from "@/lib/flash";
 import { redirect } from "next/navigation";
 import { getProfile, requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -18,7 +19,7 @@ export async function verifyMfaLoginAction(formData: FormData) {
   const profile = await getProfile();
   if (!profile) return redirect("/login");
   const next = safeNextPath(String(formData.get("next") ?? "/dashboard"));
-  const back = (msg: string): never => redirect(`/login/mfa?error=${encodeURIComponent(msg)}&next=${encodeURIComponent(next)}`);
+  const back = (msg: string): never => redirect(`/login/mfa?${flashQuery("error", msg)}&next=${encodeURIComponent(next)}`);
 
   const code = String(formData.get("code") ?? "").replace(/\s/g, "");
   if (!CODE.test(code)) return back("Enter the 6-digit code from your authenticator app.");
@@ -74,7 +75,7 @@ export async function confirmMfaEnrollAction(factorId: string, code: string): Pr
 /** Remove one of the user's authenticators. Needs a fresh code from that same authenticator; admins keep at least one. */
 export async function removeMfaFactorAction(formData: FormData) {
   const profile = await requireProfile();
-  const back = (kind: "ok" | "error", msg: string): never => redirect(`/dashboard/account?${kind}=${encodeURIComponent(msg)}`);
+  const back = (kind: "ok" | "error", msg: string): never => redirect(`/dashboard/account?${flashQuery(kind, msg)}`);
   const factorId = String(formData.get("factor_id") ?? "");
   const code = String(formData.get("code") ?? "").replace(/\s/g, "");
   if (!/^[0-9a-f-]{36}$/i.test(factorId)) return back("error", "Pick an authenticator.");

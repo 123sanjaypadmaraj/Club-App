@@ -1,3 +1,4 @@
+import { readFlash } from "@/lib/flash";
 import { requireClubAccess } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ConfirmButton, SubmitButton } from "@/components/SubmitButton";
@@ -19,7 +20,7 @@ export default async function AnnouncementsTab({ params, searchParams }: PagePro
   return (
     <>
       <PageHeader title="Announcements" subtitle="Shown on your public club page." />
-      <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
+      <Notice {...readFlash(sp)} />
       <form action={addAnnouncementAction.bind(null, slug)} className="card mb-6 space-y-3">
         <Field label="Title *"><input name="title" required maxLength={160} className="input" /></Field>
         <Field label="Message"><textarea name="body" rows={3} maxLength={2000} className="input" /></Field>
