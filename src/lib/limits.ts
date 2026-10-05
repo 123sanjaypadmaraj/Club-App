@@ -15,6 +15,7 @@ export const LIMITS = {
   event_description: 4000,
   faculty_advisor: 120,
   meeting_schedule: 160,
+  position: 60,
 } as const;
 
 export type LimitedField = keyof typeof LIMITS;
@@ -35,6 +36,7 @@ const LABELS: Record<LimitedField, string> = {
   event_description: "Description",
   faculty_advisor: "Faculty advisor",
   meeting_schedule: "Meeting schedule",
+  position: "Position",
 };
 
 /** Returns a friendly message for the first over-long field, or null when everything fits. */

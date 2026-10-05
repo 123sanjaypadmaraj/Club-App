@@ -90,20 +90,7 @@ create trigger audit_club_leads after insert or delete on public.club_leads
 -- ---------- 4. Data retention ---------------------------------------------------------------------
 -- Keeps personal data only as long as it is useful. Run by hand, or schedule it (Supabase → Database → Cron):
 --   select cron.schedule('purge-old-signups', '0 3 * * 0', $$ select public.purge_old_event_data(365) $$);
-create or replace function public.purge_old_event_data(p_days int default 365)
-returns int
-language plpgsql security definer set search_path = public as $$
-declare n int;
-begin
-  if p_days < 30 then raise exception 'retention must be at least 30 days'; end if;
-  delete from public.event_registrations r
-   using public.events e
-   where e.id = r.event_id and coalesce(e.ends_at, e.starts_at) < now() - make_interval(days => p_days);
-  get diagnostics n = row_count;
-  return n;
-end $$;
-revoke all on function public.purge_old_event_data(int) from public, anon, authenticated;
-grant execute on function public.purge_old_event_data(int) to service_role;
+-- (the purge function itself lives in section 10 below)
 
 -- ---------- 5. Public sign-ups go through the app server only -------------------------------------
 -- Before this, anyone holding the public anon key could insert registrations / feedback straight through the
@@ -171,3 +158,103 @@ begin
     execute format('alter table public.%I add constraint %I check (%s) not valid', c.tbl, c.name, c.expr);
   end loop;
 end $$;
+
+-- ---------- 7. Hide event response-sheet links and budgets from the public API -----------------------
+-- Anyone with the public anon key could read every column of a published event (including responses_sheet_url, a
+-- Google Sheet that holds registrants' form answers, and the budgets). Now anon reads only public columns; signed-in
+-- users read the budgets too; the sheet link is returned only to people who manage the event.
+-- Deploy the app code that names its columns BEFORE running this section.
+revoke select on public.events from anon, authenticated;
+grant select (id, club_id, title, description, category, venue, starts_at, ends_at, capacity, registration_url,
+              feedback_url, poster_url, registration_open, status, created_at) on public.events to anon;
+grant select (id, club_id, title, description, category, venue, starts_at, ends_at, capacity, registration_url,
+              feedback_url, poster_url, registration_open, status, created_at, budget_allocated, budget_spent) on public.events to authenticated;
+
+create or replace function public.event_responses_sheet(p_event uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select e.responses_sheet_url from events e where e.id = p_event and public.manages_event(p_event);
+$$;
+revoke all on function public.event_responses_sheet(uuid) from public, anon;
+grant execute on function public.event_responses_sheet(uuid) to authenticated;
+
+-- ---------- 8. Ticket lookups and public counts ---------------------------------------------------------
+-- RUN AFTER event_ops.sql (re-running that file restores the old grants).
+-- ticket_lookup is now callable by the app server only, so the per-IP ticket rate limit cannot be skipped.
+revoke execute on function public.ticket_lookup(text) from public, anon, authenticated;
+grant execute on function public.ticket_lookup(text) to service_role;
+do $$ begin
+  if exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+              where n.nspname = 'public' and p.proname = 'cancel_ticket') then
+    execute 'revoke execute on function public.cancel_ticket(text) from public, anon, authenticated';
+    execute 'grant execute on function public.cancel_ticket(text) to service_role';
+  end if;
+end $$;
+-- Only the triggers (owner rights) promote the waitlist; no signed-in user can call it for an arbitrary event.
+revoke execute on function public.promote_waitlist(uuid) from public, anon, authenticated;
+
+-- Counts for public pages: published events only (the old view also listed draft and cancelled event ids).
+create or replace view public.event_public_counts as
+select r.event_id,
+       (count(*) filter (where r.status = 'confirmed'))::int  as registrations,
+       (count(*) filter (where r.status = 'waitlisted'))::int as waitlisted
+from public.event_registrations r
+join public.events e on e.id = r.event_id and e.status = 'published'
+group by r.event_id;
+grant select on public.event_public_counts to anon, authenticated;
+
+-- ---------- 9. Remaining lead-writable fields -----------------------------------------------------------
+-- Same pattern as section 6: NOT VALID, so existing rows never block this; new and edited rows must pass.
+do $$
+declare c record;
+begin
+  for c in select * from (values
+    ('announcements',      'announcements_lengths_chk',     $c$char_length(title) <= 160 and char_length(body) <= 2000$c$),
+    ('club_members',       'club_members_lengths_chk',      $c$char_length(full_name) <= 120 and char_length(coalesce(roll_no, '')) <= 40 and char_length(coalesce(department, '')) <= 80 and char_length(coalesce(phone, '')) <= 20 and char_length(position) <= 60 and (year is null or year between 1 and 10) and (email is null or (char_length(email) <= 160 and email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'))$c$),
+    ('events',             'events_sheet_chk',              $c$responses_sheet_url is null or (char_length(responses_sheet_url) <= 500 and responses_sheet_url ~ '^https://docs\.google\.com/spreadsheets/')$c$),
+    ('events',             'events_budget_chk',             $c$budget_allocated >= 0 and budget_spent >= 0$c$),
+    ('event_registrations', 'event_registrations_ticket_chk', $c$ticket_code ~ '^[A-Z0-9]{10,24}$'$c$)
+  ) as t(tbl, name, expr)
+  loop
+    execute format('alter table public.%I drop constraint if exists %I', c.tbl, c.name);
+    execute format('alter table public.%I add constraint %I check (%s) not valid', c.tbl, c.name, c.expr);
+  end loop;
+end $$;
+
+-- ---------- 10. Data retention -----------------------------------------------------------------------------
+-- Replaces the section 4 helper. Keeps personal data only as long as it is useful. Run by hand or schedule it
+-- (Supabase -> Database -> Cron):
+--   select cron.schedule('purge-old-data', '0 3 * * 0', $$ select public.purge_old_event_data(365, 730) $$);
+-- Registrations are deleted; feedback keeps its rating and comment but loses name and email; old audit and
+-- rate-limit rows are removed. Returns the number of rows affected.
+drop function if exists public.purge_old_event_data(int);
+create or replace function public.purge_old_event_data(p_days int default 365, p_audit_days int default 730)
+returns int
+language plpgsql security definer set search_path = public as $$
+declare n int; total int := 0;
+begin
+  if p_days < 30 then raise exception 'retention must be at least 30 days'; end if;
+  if p_audit_days < 365 then raise exception 'audit retention must be at least 365 days'; end if;
+
+  delete from public.event_registrations r
+   using public.events e
+   where e.id = r.event_id and coalesce(e.ends_at, e.starts_at) < now() - make_interval(days => p_days);
+  get diagnostics n = row_count; total := total + n;
+
+  update public.event_feedback f
+     set full_name = null, email = 'redacted-' || f.id || '@invalid'
+    from public.events e
+   where e.id = f.event_id
+     and coalesce(e.ends_at, e.starts_at) < now() - make_interval(days => p_days)
+     and f.email not like 'redacted-%@invalid';
+  get diagnostics n = row_count; total := total + n;
+
+  delete from public.audit_log where at < now() - make_interval(days => p_audit_days);
+  get diagnostics n = row_count; total := total + n;
+
+  delete from public.rate_limits where window_start < now() - interval '1 day';
+  get diagnostics n = row_count; total := total + n;
+
+  return total;
+end $$;
+revoke all on function public.purge_old_event_data(int, int) from public, anon, authenticated;
+grant execute on function public.purge_old_event_data(int, int) to service_role;

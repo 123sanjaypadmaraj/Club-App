@@ -1,3 +1,4 @@
+import { PUBLIC_EVENT_COLUMNS } from "@/lib/eventColumns";
 import { safeColor } from "@/lib/safe";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -17,11 +18,11 @@ const UUID = /^[0-9a-f-]{36}$/i;
 async function load(id: string) {
   if (!UUID.test(id)) return null;
   const supabase = await createClient();
-  const { data } = await supabase.from("events").select("*, clubs(*)").eq("id", id).maybeSingle();
+  const { data } = await supabase.from("events").select(`${PUBLIC_EVENT_COLUMNS}, clubs(*)`).eq("id", id).maybeSingle();
   if (!data) return null;
   const { data: c } = await supabase.from("event_public_counts").select("registrations, waitlisted").eq("event_id", id).maybeSingle();
   return {
-    event: data as ClubEvent & { clubs: Club },
+    event: data as unknown as ClubEvent & { clubs: Club },
     registered: (c?.registrations as number | undefined) ?? 0,
     waitlisted: (c?.waitlisted as number | undefined) ?? 0,
   };

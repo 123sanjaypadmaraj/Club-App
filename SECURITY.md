@@ -21,6 +21,11 @@
 | Changing a password signs out every other session | `src/app/dashboard/actions.ts` |
 | Retention helper for old sign-ups | `supabase/security.sql` |
 | Dependency audit, secret scan and CodeQL on every push and weekly; actions pinned to commit SHAs, read-only token, CODEOWNERS | `.github/workflows/`, `.github/CODEOWNERS` |
+| Event response-sheet links and budgets hidden from the public API (column-level grants; the link comes from a managers-only function) | `supabase/security.sql` section 7, `src/lib/eventColumns.ts` |
+| Ticket lookup callable only by the app server (rate limit cannot be skipped); public counts list published events only; no user can trigger waitlist promotion directly | `supabase/security.sql` section 8, `src/app/ticket/[code]/page.tsx` |
+| Roster, announcement, budget, sheet-link and ticket-code rules enforced in the database | `supabase/security.sql` section 9 |
+| Startup check also fails if a service-role key is used as the public key; logs when public sign-ups are open | `src/lib/config-check.ts` |
+| Personal data kept out of logs and audit entries: a test scans every log call, and email addresses in error text are masked | `src/lib/__tests__/log-pii.test.ts`, `src/lib/log.ts` |
 | Public sign-ups inserted only by the server (function `submit_registration` / `submit_feedback`), so CAPTCHA and rate limits cannot be bypassed via the API | `supabase/security.sql`, `src/app/actions.ts` |
 | Database checks on club/event colours, URLs and lengths; colours and links also re-validated when rendered | `supabase/security.sql`, `src/lib/safe.ts` |
 | Linear-time email check with a 254-character cutoff; 1 MB cap on CSV imports | `src/lib/email.ts` |
@@ -30,10 +35,22 @@
 | Static test over `supabase/*.sql`: RLS on every table, pinned `search_path`, no stray grants to anon | `src/lib/__tests__/sql-security.test.ts` |
 | Structured security log lines (`"level":"security"`) for failed logins, throttling, CAPTCHA | `src/lib/log.ts` |
 
+## Personal data we keep
+
+| Store | What | Who can read it | Kept for |
+| --- | --- | --- | --- |
+| `event_registrations` | name, email, roll no, department, year, phone, ticket code | Leads of that club, the admin; the holder via their ticket link | Deleted 365 days after the event (`purge_old_event_data`) |
+| `event_feedback` | rating, comment, and (until purged) name and email | Leads of that club, the admin | Name and email blanked after 365 days; rating and comment stay |
+| `club_members` | name, email, roll no, department, year, phone, position | Leads of that club, the admin | Until a lead removes the member |
+| `profiles` | name, email, role | The person themselves, the admin | Until the account is deleted |
+| `audit_log` | actor id, action, target id, counts (no names or emails) | The admin | 730 days |
+| `rate_limits` | hashed IP / username keys and counters | Nobody through the app (service role only) | 1 day |
+| Linked Google Sheets | Whatever the organiser collects in their own form | Anyone with the sheet link; managed in Google, outside this app | Set by the organiser |
+
 ## One-time setup (cannot be done from code)
 
 1. **Run `supabase/security.sql`** in the Supabase SQL editor (and run it again whenever you re-run `schema.sql`). Until you do, rate limiting does nothing (it fails open and logs `rate_limit_unavailable`) and public sign-ups can still be inserted around the CAPTCHA through the Supabase API. It also adds database-level checks for colours, URLs and field lengths.
-2. **Supabase → Authentication**: set minimum password length to 12, enable leaked-password protection, enable TOTP multi-factor, set a session timeout.
+2. **Supabase → Authentication**: turn **off** "Allow new users to sign up" (Sign In / Providers; every account here is created by the admin, and open sign-ups let anyone with the public key create a login). Set minimum password length to 12, enable leaked-password protection, enable TOTP multi-factor, set a session timeout. The app logs `config_insecure` / `public_signup_enabled` at startup if sign-ups are still open.
 3. **Turnstile**: create a widget at Cloudflare, put the keys in Vercel as `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`, then redeploy.
 4. **Vercel**: keep `SUPABASE_SERVICE_ROLE_KEY` as a secret (never `NEXT_PUBLIC_`); enable Firewall / Bot Protection and a spend limit.
 5. **Admin**: sign in, open *My account*, and set up the authenticator app. Admin pages stay locked until you do.
@@ -56,5 +73,5 @@
 
 - Merge Dependabot PRs weekly.
 - Each term, delete lead accounts that are no longer needed (and review who has Supabase/Vercel/GitHub access).
-- Run `select public.purge_old_event_data(365);` (or schedule it) to drop old sign-ups.
+- Run `select public.purge_old_event_data(365, 730);` (or schedule it, see `supabase/security.sql` section 10). It deletes old sign-ups, blanks names and emails on old feedback, and trims old audit and rate-limit rows.
 - Before a big launch, have someone outside the team test the site.

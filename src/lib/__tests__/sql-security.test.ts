@@ -64,4 +64,40 @@ describe("supabase SQL security", () => {
       expect(sec.includes(`grant execute on function public.${fn}(`), fn).toBe(true);
     }
   });
+
+  it("locks down events columns, ticket lookup and counts (security.sql sections 7 and 8)", () => {
+    const sec = readFileSync(join(dir, "security.sql"), "utf8");
+    // events: no table-wide read for API roles; anon gets a column list without the sheet link or budgets
+    expect(/revoke select on public\.events from anon, authenticated/i.test(sec)).toBe(true);
+    const anonGrant = sec.match(/grant select \(([^)]*)\) on public\.events to anon/i);
+    expect(anonGrant).not.toBeNull();
+    for (const secret of ["responses_sheet_url", "budget_allocated", "budget_spent"]) expect(anonGrant![1]).not.toContain(secret);
+    // ticket lookups are server-only
+    expect(/revoke execute on function public\.ticket_lookup\(text\) from public, anon, authenticated/i.test(sec)).toBe(true);
+    expect(/grant execute on function public\.ticket_lookup\(text\) to service_role/i.test(sec)).toBe(true);
+    // only triggers promote the waitlist
+    expect(/revoke execute on function public\.promote_waitlist\(uuid\) from public, anon, authenticated/i.test(sec)).toBe(true);
+  });
+
+  it("retention purge also redacts feedback and trims audit and rate-limit rows (section 10)", () => {
+    const sec = readFileSync(join(dir, "security.sql"), "utf8");
+    const body = sec.slice(sec.indexOf("create or replace function public.purge_old_event_data(p_days int default 365, p_audit_days"));
+    for (const t of ["event_registrations", "event_feedback", "audit_log", "rate_limits"]) expect(body.slice(0, 2000), t).toContain(t);
+    expect(sec).toMatch(/revoke all on function public\.purge_old_event_data\(int, int\) from public, anon, authenticated/i);
+  });
+
+  it("constrains the remaining lead-writable fields (section 9)", () => {
+    const sec = readFileSync(join(dir, "security.sql"), "utf8");
+    for (const name of ["announcements_lengths_chk", "club_members_lengths_chk", "events_sheet_chk", "events_budget_chk", "event_registrations_ticket_chk"]) {
+      expect(sec, name).toContain(name);
+    }
+  });
+
+  it("only allowlisted views are readable by anon, and the public counts view lists published events only", () => {
+    const VIEW_ALLOWLIST = new Set(["event_public_counts"]);
+    const views = [...sql.matchAll(/grant select on public\.(\w+) to ([^;]*anon[^;]*);/gi)].map((m) => m[1]);
+    for (const v of views) expect(VIEW_ALLOWLIST.has(v), `${v} readable by anon`).toBe(true);
+    const sec = readFileSync(join(dir, "security.sql"), "utf8");
+    expect(/create or replace view public\.event_public_counts[\s\S]*e\.status = 'published'/i.test(sec)).toBe(true);
+  });
 });

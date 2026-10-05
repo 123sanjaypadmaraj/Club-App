@@ -9,7 +9,7 @@ describe("checkConfig", () => {
     expect(checkConfig({}, false).fatal).toHaveLength(2);
   });
   it("fails when a service-role key is exposed to the browser", () => {
-    expect(checkConfig({ ...ok, NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY: "s" }, false).fatal[0]).toMatch(/exposed/i);
+    expect(checkConfig({ ...ok, NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY: "s" }, false).fatal.join(" ")).toMatch(/exposed/i);
   });
   it("warns about risky production settings", () => {
     const r = checkConfig({ ...ok, TURNSTILE_SECRET_KEY: "", ADMIN_MFA: "off", SUPABASE_SERVICE_ROLE_KEY: "" }, true);

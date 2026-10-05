@@ -1,3 +1,15 @@
+const MAX_MESSAGE = 300;
+
+/** Mask email-like words and cap the length, so a database or auth error cannot carry personal data into the logs. */
+export function redactMessage(message: string | null | undefined): string | null {
+  if (message == null) return null;
+  const masked = message
+    .split(/(\s+)/)
+    .map((w) => (w.includes("@") && /@[^\s@]+\.[^\s@]+/.test(w.slice(0, 320)) ? "[email]" : w))
+    .join("");
+  return masked.length > MAX_MESSAGE ? masked.slice(0, MAX_MESSAGE) : masked;
+}
+
 export type LogExtra = Record<string, string | number | null>;
 
 /** One-line JSON for a failed server action. Callers pass ids only, never names, emails, phones or passwords. */
@@ -10,7 +22,7 @@ export function formatActionError(
     level: "error",
     action,
     code: error?.code ?? null,
-    message: error?.message ?? null,
+    message: redactMessage(error?.message),
     ...extra,
   });
 }

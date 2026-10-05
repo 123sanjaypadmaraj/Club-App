@@ -2,7 +2,8 @@ import { safeColor } from "@/lib/safe";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { logSecurityEvent } from "@/lib/log";
 import { PrintButton } from "@/components/PrintButton";
 import { fmtDateTime } from "@/lib/format";
 import { parseTicketCode } from "@/lib/tickets";
@@ -27,7 +28,14 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
     return <p className="mx-auto max-w-md text-center text-sm text-muted">Too many lookups. Please wait a few minutes and try again.</p>;
   }
 
-  const supabase = await createClient();
+  // The lookup function is server-only (supabase/security.sql section 8). Fall back to the public client until that SQL is applied.
+  let supabase;
+  try {
+    supabase = createServiceClient();
+  } catch {
+    logSecurityEvent("ticket_lookup_anon_fallback");
+    supabase = await createClient();
+  }
   const { data } = await supabase.rpc("ticket_lookup", { p_code: code });
   const t = (data as Ticket[] | null)?.[0];
   if (!t) notFound();

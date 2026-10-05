@@ -32,13 +32,13 @@ export default async function MembersTab({ params, searchParams }: PageProps<"/d
         <details className="card">
           <summary className="cursor-pointer text-sm font-medium">+ Add one member</summary>
           <form action={addMemberAction.bind(null, slug)} className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Field label="Name *"><input name="full_name" required className="input" /></Field>
-            <Field label="Email"><input name="email" type="email" className="input" /></Field>
-            <Field label="Roll no"><input name="roll_no" className="input" /></Field>
-            <Field label="Department"><input name="department" className="input" /></Field>
+            <Field label="Name *"><input name="full_name" required maxLength={120} className="input" /></Field>
+            <Field label="Email"><input name="email" type="email" maxLength={160} className="input" /></Field>
+            <Field label="Roll no"><input name="roll_no" maxLength={40} className="input" /></Field>
+            <Field label="Department"><input name="department" maxLength={80} className="input" /></Field>
             <Field label="Year"><input name="year" type="number" min={1} max={6} className="input" /></Field>
-            <Field label="Phone"><input name="phone" className="input" /></Field>
-            <Field label="Position"><input name="position" defaultValue="Member" list="positions" className="input" /></Field>
+            <Field label="Phone"><input name="phone" maxLength={20} className="input" /></Field>
+            <Field label="Position"><input name="position" defaultValue="Member" list="positions" maxLength={60} className="input" /></Field>
             <datalist id="positions">{["President", "Vice President", "Secretary", "Treasurer", "Core", "Member"].map((p) => <option key={p} value={p} />)}</datalist>
             <div className="sm:col-span-2"><SubmitButton className="btn btn-primary" pendingText="Adding…">Add member</SubmitButton></div>
           </form>

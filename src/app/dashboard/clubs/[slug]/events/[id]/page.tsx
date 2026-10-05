@@ -1,3 +1,4 @@
+import { LEAD_EVENT_COLUMNS } from "@/lib/eventColumns";
 import { safeHref } from "@/lib/safe";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -23,9 +24,19 @@ export default async function EventAdminPage({ params, searchParams }: PageProps
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const supabase = await createClient();
-  const { data: ev } = await supabase.from("events").select("*").eq("id", id).eq("club_id", club.id).maybeSingle();
+  const { data: ev } = await supabase.from("events").select(LEAD_EVENT_COLUMNS).eq("id", id).eq("club_id", club.id).maybeSingle();
   if (!ev) notFound();
   const event = ev as ClubEvent;
+  {
+    const viaFn = await supabase.rpc("event_responses_sheet", { p_event: id });
+    if (viaFn.error?.code === "PGRST202") {
+      // supabase/security.sql section 7 not applied yet: read the column directly
+      const { data: col } = await supabase.from("events").select("responses_sheet_url").eq("id", id).maybeSingle();
+      event.responses_sheet_url = (col as { responses_sheet_url: string | null } | null)?.responses_sheet_url ?? null;
+    } else {
+      event.responses_sheet_url = (viaFn.data as string | null) ?? null;
+    }
+  }
 
   const [{ data: regs }, { data: fb }] = await Promise.all([
     supabase.from("event_registrations").select("*").eq("event_id", id).order("registered_at", { ascending: false }),

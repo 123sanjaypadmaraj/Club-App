@@ -1,5 +1,6 @@
 "use server";
 
+import { LEAD_EVENT_COLUMNS } from "@/lib/eventColumns";
 import { isEmail, MAX_IMPORT_BYTES } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { logActionError } from "@/lib/log";
@@ -184,7 +185,7 @@ export async function duplicateEventAction(slug: string, eventId: string) {
   const { club } = await requireClubAccess(slug);
   const back = `/dashboard/clubs/${slug}/events/${eventId}`;
   const supabase = await createClient();
-  const { data: src } = await supabase.from("events").select("*").eq("id", eventId).eq("club_id", club.id).maybeSingle();
+  const { data: src } = await supabase.from("events").select(LEAD_EVENT_COLUMNS).eq("id", eventId).eq("club_id", club.id).maybeSingle();
   if (!src) return go(`/dashboard/clubs/${slug}/events`, "error", "Event not found.");
   const { data, error } = await supabase.from("events").insert(duplicateEventRow(src as ClubEvent)).select("id").single();
   if (error || !data) { logActionError("duplicateEventAction", error, { slug, eventId }); return go(back, "error", "Could not duplicate the event."); }
@@ -371,6 +372,13 @@ export async function addMemberAction(slug: string, formData: FormData) {
   const full_name = str(formData.get("full_name"));
   if (!full_name) return go(back, "error", "Member name is required.");
   const email = str(formData.get("email"))?.toLowerCase() ?? null;
+  const roll_no = str(formData.get("roll_no"));
+  const department = str(formData.get("department"));
+  const phone = str(formData.get("phone"));
+  const position = str(formData.get("position")) ?? "Member";
+  const tooLong = validateLengths({ full_name, email, roll_no, department, phone, position });
+  if (tooLong) return go(back, "error", tooLong);
+  if (email && !isEmail(email)) return go(back, "error", "Please enter a valid email address.");
   const supabase = await createClient();
   if (email) {
     const { data: dup } = await supabase.from("club_members").select("id").eq("club_id", club.id).ilike("email", email).limit(1);
@@ -380,11 +388,11 @@ export async function addMemberAction(slug: string, formData: FormData) {
     club_id: club.id,
     full_name,
     email,
-    roll_no: str(formData.get("roll_no")),
-    department: str(formData.get("department")),
+    roll_no,
+    department,
     year: int(formData.get("year")),
-    phone: str(formData.get("phone")),
-    position: str(formData.get("position")) ?? "Member",
+    phone,
+    position,
   });
   if (error) { logActionError("addMemberAction", error, { slug }); return go(back, "error", "Could not add member."); }
   return go(back, "ok", "Member added.");
@@ -401,6 +409,7 @@ export async function importMembersAction(slug: string, formData: FormData) {
     const [name, email, roll, dept, year, phone, position] = line.map((c) => c.trim());
     if (!name || /^name$/i.test(name)) continue; // skip header
     if (email && !isEmail(email)) { skipped++; continue; }
+    if (validateLengths({ full_name: name, email, roll_no: roll, department: dept, phone, position })) { skipped++; continue; }
     rows.push({
       club_id: club.id,
       full_name: name,

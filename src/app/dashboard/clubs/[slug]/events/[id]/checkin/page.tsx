@@ -1,3 +1,4 @@
+import { LEAD_EVENT_COLUMNS } from "@/lib/eventColumns";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireClubAccess } from "@/lib/auth";
@@ -14,7 +15,7 @@ export default async function CheckinPage({ params }: PageProps<"/dashboard/club
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const supabase = await createClient();
-  const { data: ev } = await supabase.from("events").select("*").eq("id", id).eq("club_id", club.id).maybeSingle();
+  const { data: ev } = await supabase.from("events").select(LEAD_EVENT_COLUMNS).eq("id", id).eq("club_id", club.id).maybeSingle();
   if (!ev) notFound();
   const event = ev as ClubEvent;
   const { data: regs } = await supabase.from("event_registrations").select("*").eq("event_id", id).order("registered_at");
