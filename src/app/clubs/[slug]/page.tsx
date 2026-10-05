@@ -1,3 +1,4 @@
+import { safeColor, safeHref } from "@/lib/safe";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
@@ -38,7 +39,7 @@ export default async function ClubPage({ params }: PageProps<"/clubs/[slug]">) {
 
   return (
     <div className="space-y-10">
-      <header className="card" style={{ borderTop: `4px solid ${club.accent_color}`, background: `linear-gradient(135deg, color-mix(in srgb, ${club.accent_color} 14%, var(--surface)), var(--surface) 65%)` }}>
+      <header className="card" style={{ borderTop: `4px solid ${safeColor(club.accent_color)}`, background: `linear-gradient(135deg, color-mix(in srgb, ${safeColor(club.accent_color)} 14%, var(--surface)), var(--surface) 65%)` }}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <TintBadge>{club.category}</TintBadge>
@@ -55,7 +56,7 @@ export default async function ClubPage({ params }: PageProps<"/clubs/[slug]">) {
           {club.contact_email && <div><dt className="inline text-muted">Contact: </dt><dd className="inline"><a className="text-brand hover:underline" href={`mailto:${club.contact_email}`}>{club.contact_email}</a></dd></div>}
         </dl>
         <div className="mt-5 flex flex-wrap gap-2">
-          {club.join_form_url && <a href={club.join_form_url} target="_blank" rel="noopener noreferrer" className="btn btn-primary">Join this club ↗</a>}
+          {club.join_form_url && <a href={safeHref(club.join_form_url)} target="_blank" rel="noopener noreferrer" className="btn btn-primary">Join this club ↗</a>}
           {club.instagram_url && <ExtLink href={club.instagram_url}>Instagram</ExtLink>}
           {club.linkedin_url && <ExtLink href={club.linkedin_url}>LinkedIn</ExtLink>}
           {club.whatsapp_url && <ExtLink href={club.whatsapp_url}>WhatsApp</ExtLink>}

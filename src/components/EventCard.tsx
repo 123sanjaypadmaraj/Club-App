@@ -1,3 +1,4 @@
+import { safeColor } from "@/lib/safe";
 import Link from "next/link";
 import { fmtDateTime } from "@/lib/format";
 import { TintBadge } from "@/components/ui";
@@ -12,7 +13,7 @@ export type EventCardData = {
 };
 
 export function EventCard({ e, showClub = true, live = false }: { e: EventCardData; showClub?: boolean; live?: boolean }) {
-  const accent = e.clubs?.accent_color ?? "#4f46e5";
+  const accent = safeColor(e.clubs?.accent_color);
   return (
     <Link href={`/events/${e.id}`} className="card block overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg" style={{ borderTop: `3px solid ${accent}`, background: `linear-gradient(180deg, color-mix(in srgb, ${accent} 9%, var(--surface)), var(--surface) 60%)` }}>
       <div className="flex items-center justify-between gap-2 text-xs text-muted">

@@ -1,3 +1,4 @@
+import { safeColor } from "@/lib/safe";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
@@ -46,7 +47,7 @@ export default async function TicketPage({ params, searchParams }: PageProps<"/t
         </div>
       )}
 
-      <article className="card text-center" style={{ borderTop: `4px solid ${t.accent_color}` }}>
+      <article className="card text-center" style={{ borderTop: `4px solid ${safeColor(t.accent_color)}` }}>
         <p className="text-xs font-medium uppercase tracking-wide text-muted">{t.club_name}</p>
         <h1 className="mt-1 text-xl font-bold tracking-tight">{t.title}</h1>
         <p className="mt-1 text-sm text-muted">

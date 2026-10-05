@@ -47,6 +47,17 @@ export async function signIn(formData: FormData) {
   redirect(next);
 }
 
+/** End this session and every other one (lost laptop, shared computer). */
+export async function signOutEverywhereAction() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/login");
+  await audit(data.user.id, AUDIT_ACTIONS.logoutEverywhere, data.user.id);
+  await supabase.auth.signOut({ scope: "global" });
+  (await cookies()).delete(LAST_SEEN_COOKIE);
+  redirect("/login?error=" + encodeURIComponent("You were signed out of all devices. Sign in again."));
+}
+
 export async function signOut() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();

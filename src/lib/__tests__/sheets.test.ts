@@ -17,3 +17,15 @@ describe("sheetCsvUrl", () => {
     expect(sheetCsvUrl(null)).toBeNull();
   });
 });
+
+import { isGoogleHost, readCapped } from "../sheets";
+describe("isGoogleHost", () => {
+  it("allows Google hosts only", () => {
+    for (const h of ["docs.google.com", "doc-0s-abc.googleusercontent.com", "accounts.google.com"]) expect(isGoogleHost(h), h).toBe(true);
+    for (const h of ["evil.com", "google.com.evil.com", "169.254.169.254", "localhost", "notgoogle.com"]) expect(isGoogleHost(h), h).toBe(false);
+  });
+});
+describe("readCapped", () => {
+  it("returns the text when under the cap", async () => expect(await readCapped(new Response("a,b\n1,2"), 100)).toBe("a,b\n1,2"));
+  it("returns null when over the cap", async () => expect(await readCapped(new Response("x".repeat(500)), 100)).toBeNull());
+});

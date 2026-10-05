@@ -21,6 +21,7 @@ export const AUDIT_ACTIONS = {
   login: "auth.login",
   mfaVerified: "auth.mfa_verified",
   logout: "auth.logout",
+  logoutEverywhere: "auth.logout_everywhere",
   mfaRemoved: "account.mfa_removed",
   leadMfaCleared: "lead.mfa_cleared",
   loginThrottled: "auth.login_throttled",

@@ -1,3 +1,4 @@
+import { safeColor } from "@/lib/safe";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { EventCard, type EventCardData } from "@/components/EventCard";
@@ -78,7 +79,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {clubs.map((c) => (
-              <Link key={c.id} href={`/clubs/${c.slug}`} className="card block transition hover:-translate-y-0.5 hover:shadow-lg" style={{ borderTop: `3px solid ${c.accent_color}`, background: `linear-gradient(180deg, color-mix(in srgb, ${c.accent_color} 9%, var(--surface)), var(--surface) 60%)` }}>
+              <Link key={c.id} href={`/clubs/${c.slug}`} className="card block transition hover:-translate-y-0.5 hover:shadow-lg" style={{ borderTop: `3px solid ${safeColor(c.accent_color)}`, background: `linear-gradient(180deg, color-mix(in srgb, ${safeColor(c.accent_color)} 9%, var(--surface)), var(--surface) 60%)` }}>
                 <div className="flex items-start justify-between gap-3">
                   <TintBadge>{c.category}</TintBadge>
                   <ClubLogo club={c} size={44} />

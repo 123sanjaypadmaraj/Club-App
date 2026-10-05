@@ -1,3 +1,4 @@
+import { safeColor } from "@/lib/safe";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -60,7 +61,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
       )}
       <Notice ok={typeof sp.ok === "string" ? sp.ok : undefined} error={typeof sp.error === "string" ? sp.error : undefined} />
 
-      <header className="card" style={{ borderTop: `4px solid ${club.accent_color}` }}>
+      <header className="card" style={{ borderTop: `4px solid ${safeColor(club.accent_color)}` }}>
         <div className="flex flex-wrap items-center gap-2">
           <TintBadge>{event.category}</TintBadge>
           {cancelled && <span className="badge border-red-500/40 text-red-600">Cancelled</span>}

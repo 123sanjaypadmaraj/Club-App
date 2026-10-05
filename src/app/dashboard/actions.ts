@@ -1,5 +1,6 @@
 "use server";
 
+import { isEmail, MAX_IMPORT_BYTES } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { logActionError } from "@/lib/log";
 import { validateLengths } from "@/lib/limits";
@@ -18,7 +19,6 @@ import { LIMITS_POLICY, rateLimit } from "@/lib/ratelimit";
 import { audit, AUDIT_ACTIONS } from "@/lib/audit";
 import type { ClubEvent, Registration } from "@/lib/types";
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Redirect back with a flash message in the query string. */
 function go(path: string, kind: "ok" | "error", msg: string): never {
@@ -59,7 +59,7 @@ export async function saveClubAction(slug: string, formData: FormData) {
   const meeting_schedule = str(formData.get("meeting_schedule"));
   const tooLong = validateLengths({ club_name: name, tagline, about: description, faculty_advisor, meeting_schedule, email: contact_email });
   if (tooLong) return go(back, "error", tooLong);
-  if (contact_email && !EMAIL.test(contact_email)) return go(back, "error", "Please enter a valid contact email.");
+  if (contact_email && !isEmail(contact_email)) return go(back, "error", "Please enter a valid contact email.");
 
   const patch: Record<string, unknown> = {
     name,
@@ -157,7 +157,7 @@ export async function addParticipantAction(slug: string, eventId: string, formDa
   const back = `/dashboard/clubs/${slug}/events/${eventId}`;
   const full_name = str(formData.get("full_name"));
   const email = str(formData.get("email"))?.toLowerCase();
-  if (!full_name || !email || !EMAIL.test(email)) return go(back, "error", "A name and a valid email are required.");
+  if (!full_name || !email || !isEmail(email)) return go(back, "error", "A name and a valid email are required.");
   const roll_no = str(formData.get("roll_no"));
   const department = str(formData.get("department"));
   const phone = str(formData.get("phone"));
@@ -281,7 +281,7 @@ export async function walkInAction(
   const full_name = input.full_name?.trim();
   if (!full_name) return { ok: false, error: "A name is required." };
   const email = input.email?.trim().toLowerCase();
-  if (email && !EMAIL.test(email)) return { ok: false, error: "That email doesn't look right." };
+  if (email && !isEmail(email)) return { ok: false, error: "That email doesn't look right." };
   const tooLong = validateLengths({ full_name, email, phone: input.phone?.trim(), department: input.department?.trim() });
   if (tooLong) return { ok: false, error: tooLong };
   const ticket_code = newTicketCode();
@@ -336,7 +336,8 @@ export async function importParticipantsAction(slug: string, eventId: string, fo
   await requireClubAccess(slug);
   const back = `/dashboard/clubs/${slug}/events/${eventId}`;
   const file = formData.get("file");
-  const text = file instanceof File && file.size > 0 ? await file.text() : String(formData.get("csv") ?? "");
+  if (file instanceof File && file.size > MAX_IMPORT_BYTES) return go(back, "error", "That file is too large. Import at most 1 MB at a time.");
+  const text = file instanceof File && file.size > 0 ? await file.text() : String(formData.get("csv") ?? "").slice(0, MAX_IMPORT_BYTES);
   const { valid, invalid, duplicates } = parseParticipantRows(parseCsv(text));
   if (valid.length === 0) return go(back, "error", "No valid rows found. Each row needs a name and a valid email.");
   if (valid.length > 1000) return go(back, "error", "Please import at most 1000 rows at a time.");
@@ -393,13 +394,13 @@ export async function addMemberAction(slug: string, formData: FormData) {
 export async function importMembersAction(slug: string, formData: FormData) {
   const { club, profile } = await requireClubAccess(slug);
   const back = `/dashboard/clubs/${slug}/members`;
-  const lines = parseCsv(String(formData.get("csv") ?? ""));
+  const lines = parseCsv(String(formData.get("csv") ?? "").slice(0, MAX_IMPORT_BYTES));
   const rows: (MemberInput & { club_id: string })[] = [];
   let skipped = 0;
   for (const line of lines) {
     const [name, email, roll, dept, year, phone, position] = line.map((c) => c.trim());
     if (!name || /^name$/i.test(name)) continue; // skip header
-    if (email && !EMAIL.test(email)) { skipped++; continue; }
+    if (email && !isEmail(email)) { skipped++; continue; }
     rows.push({
       club_id: club.id,
       full_name: name,
@@ -488,7 +489,7 @@ export async function createLeadAction(formData: FormData) {
   const full_name = str(formData.get("full_name"));
   const password = String(formData.get("password") ?? "");
   const clubIds = formData.getAll("clubs").map(String);
-  if (!email || !EMAIL.test(email)) return go(back, "error", "A valid email is required.");
+  if (!email || !isEmail(email)) return go(back, "error", "A valid email is required.");
   const weak = weakPasswordReason(password, email);
   if (weak) return go(back, "error", weak);
 

@@ -104,3 +104,70 @@ begin
 end $$;
 revoke all on function public.purge_old_event_data(int) from public, anon, authenticated;
 grant execute on function public.purge_old_event_data(int) to service_role;
+
+-- ---------- 5. Public sign-ups go through the app server only -------------------------------------
+-- Before this, anyone holding the public anon key could insert registrations / feedback straight through the
+-- Supabase API, skipping CAPTCHA, rate limits and length checks, and could pick their own ticket code.
+-- Now only the app server (service role) can insert, via these functions. Run this file AFTER schema.sql
+-- (re-running schema.sql re-creates the two anon insert policies; run this file again afterwards).
+create or replace function public.submit_registration(
+  p_event uuid, p_full_name text, p_email text, p_roll_no text, p_department text, p_year int, p_phone text, p_ticket_code text
+) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.event_accepts_registration(p_event) then
+    raise exception 'registration closed' using errcode = '42501';
+  end if;
+  if p_full_name is null or length(btrim(p_full_name)) = 0 or char_length(p_full_name) > 120
+     or p_email is null or char_length(p_email) > 254 or p_email !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+     or char_length(coalesce(p_roll_no, '')) > 40 or char_length(coalesce(p_department, '')) > 80
+     or char_length(coalesce(p_phone, '')) > 20 or p_ticket_code !~ '^[A-Z0-9]{10,24}$' then
+    raise exception 'invalid registration' using errcode = '22023';
+  end if;
+  insert into public.event_registrations (event_id, full_name, email, roll_no, department, year, phone, ticket_code)
+  values (p_event, btrim(p_full_name), lower(p_email), p_roll_no, p_department, p_year, p_phone, p_ticket_code);
+end $$;
+revoke all on function public.submit_registration(uuid, text, text, text, text, int, text, text) from public, anon, authenticated;
+grant execute on function public.submit_registration(uuid, text, text, text, text, int, text, text) to service_role;
+
+create or replace function public.submit_feedback(
+  p_event uuid, p_full_name text, p_email text, p_rating int, p_comment text
+) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.event_accepts_feedback(p_event) then
+    raise exception 'feedback closed' using errcode = '42501';
+  end if;
+  if p_rating is null or p_rating not between 1 and 5
+     or p_email is null or char_length(p_email) > 254 or p_email !~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+     or char_length(coalesce(p_full_name, '')) > 120 or char_length(coalesce(p_comment, '')) > 2000 then
+    raise exception 'invalid feedback' using errcode = '22023';
+  end if;
+  insert into public.event_feedback (event_id, full_name, email, rating, comment)
+  values (p_event, p_full_name, lower(p_email), p_rating, p_comment);
+end $$;
+revoke all on function public.submit_feedback(uuid, text, text, int, text) from public, anon, authenticated;
+grant execute on function public.submit_feedback(uuid, text, text, int, text) to service_role;
+
+drop policy if exists registrations_insert on public.event_registrations;
+drop policy if exists feedback_insert on public.event_feedback;
+
+-- ---------- 6. Field rules enforced in the database -----------------------------------------------
+-- Leads can update their own club / event rows straight through the API, skipping the app checks.
+-- NOT VALID: existing rows are never blocked; every new or edited row must pass.
+do $$
+declare c record;
+begin
+  for c in select * from (values
+    ('clubs',  'clubs_accent_chk',   $c$accent_color ~ '^#[0-9a-fA-F]{6}$'$c$),
+    ('clubs',  'clubs_urls_chk',     $c$(logo_url is null or logo_url ~* '^https?://') and (instagram_url is null or instagram_url ~* '^https?://') and (linkedin_url is null or linkedin_url ~* '^https?://') and (whatsapp_url is null or whatsapp_url ~* '^https?://') and (website_url is null or website_url ~* '^https?://') and (join_form_url is null or join_form_url ~* '^https?://')$c$),
+    ('clubs',  'clubs_email_chk',    $c$contact_email is null or (char_length(contact_email) <= 254 and contact_email ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$')$c$),
+    ('clubs',  'clubs_lengths_chk',  $c$char_length(name) <= 80 and char_length(coalesce(tagline, '')) <= 140 and char_length(coalesce(description, '')) <= 2000 and char_length(coalesce(faculty_advisor, '')) <= 120 and char_length(coalesce(meeting_schedule, '')) <= 160$c$),
+    ('events', 'events_urls_chk',    $c$(registration_url is null or registration_url ~* '^https?://') and (feedback_url is null or feedback_url ~* '^https?://') and (poster_url is null or poster_url ~* '^https?://')$c$),
+    ('events', 'events_lengths_chk', $c$char_length(title) <= 160 and char_length(coalesce(venue, '')) <= 160 and char_length(coalesce(description, '')) <= 4000$c$)
+  ) as t(tbl, name, expr)
+  loop
+    execute format('alter table public.%I drop constraint if exists %I', c.tbl, c.name);
+    execute format('alter table public.%I add constraint %I check (%s) not valid', c.tbl, c.name, c.expr);
+  end loop;
+end $$;

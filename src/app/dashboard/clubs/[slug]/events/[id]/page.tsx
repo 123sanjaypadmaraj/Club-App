@@ -1,3 +1,4 @@
+import { safeHref } from "@/lib/safe";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireClubAccess } from "@/lib/auth";
@@ -123,7 +124,7 @@ export default async function EventAdminPage({ params, searchParams }: PageProps
       <section id="responses" className="scroll-mt-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">Form responses</h2>
-          {event.responses_sheet_url && <a href={event.responses_sheet_url} target="_blank" rel="noopener noreferrer" className="btn">Open in Google Sheets ↗</a>}
+          {event.responses_sheet_url && <a href={safeHref(event.responses_sheet_url)} target="_blank" rel="noopener noreferrer" className="btn">Open in Google Sheets ↗</a>}
         </div>
         {event.responses_sheet_url ? (
           <ResponsesSheet url={event.responses_sheet_url} />

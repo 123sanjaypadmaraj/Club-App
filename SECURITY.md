@@ -20,12 +20,19 @@
 | Login: per-IP limit, then CAPTCHA, then per-account limits (15 min and daily), so bots cannot lock accounts out | `src/app/login/actions.ts` |
 | Changing a password signs out every other session | `src/app/dashboard/actions.ts` |
 | Retention helper for old sign-ups | `supabase/security.sql` |
-| Dependency audit, secret scan and CodeQL on every push and weekly | `.github/workflows/security.yml` |
+| Dependency audit, secret scan and CodeQL on every push and weekly; actions pinned to commit SHAs, read-only token, CODEOWNERS | `.github/workflows/`, `.github/CODEOWNERS` |
+| Public sign-ups inserted only by the server (function `submit_registration` / `submit_feedback`), so CAPTCHA and rate limits cannot be bypassed via the API | `supabase/security.sql`, `src/app/actions.ts` |
+| Database checks on club/event colours, URLs and lengths; colours and links also re-validated when rendered | `supabase/security.sql`, `src/lib/safe.ts` |
+| Linear-time email check with a 254-character cutoff; 1 MB cap on CSV imports | `src/lib/email.ts` |
+| Google Sheets import: redirects only to Google hosts, 2 MB body cap | `src/lib/sheets.ts` |
+| Startup configuration check (refuses to start without Supabase keys; logs `config_insecure` for missing CAPTCHA/service key, `ADMIN_MFA=off`) | `src/instrumentation.ts`, `src/lib/config-check.ts` |
+| *Sign out everywhere* button | `src/app/login/actions.ts` |
+| Static test over `supabase/*.sql`: RLS on every table, pinned `search_path`, no stray grants to anon | `src/lib/__tests__/sql-security.test.ts` |
 | Structured security log lines (`"level":"security"`) for failed logins, throttling, CAPTCHA | `src/lib/log.ts` |
 
 ## One-time setup (cannot be done from code)
 
-1. **Run `supabase/security.sql`** in the Supabase SQL editor. Until you do, rate limiting does nothing (it fails open and logs `rate_limit_unavailable`).
+1. **Run `supabase/security.sql`** in the Supabase SQL editor (and run it again whenever you re-run `schema.sql`). Until you do, rate limiting does nothing (it fails open and logs `rate_limit_unavailable`) and public sign-ups can still be inserted around the CAPTCHA through the Supabase API. It also adds database-level checks for colours, URLs and field lengths.
 2. **Supabase → Authentication**: set minimum password length to 12, enable leaked-password protection, enable TOTP multi-factor, set a session timeout.
 3. **Turnstile**: create a widget at Cloudflare, put the keys in Vercel as `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`, then redeploy.
 4. **Vercel**: keep `SUPABASE_SERVICE_ROLE_KEY` as a secret (never `NEXT_PUBLIC_`); enable Firewall / Bot Protection and a spend limit.
@@ -38,12 +45,14 @@
 
 1. **Contain**: in Vercel, pause the deployment or enable "Attack Challenge Mode".
 2. **Rotate**: Supabase → Settings → API → regenerate the service-role key and JWT secret if exposed; update Vercel and redeploy.
-3. **Reset**: reset affected lead passwords from the Leads page; sign out all sessions from Supabase Auth.
+3. **Reset**: reset affected lead passwords from the Leads page. Each person can end all their sessions with *Sign out everywhere* under My account (the admin should do this first).
 4. **Investigate**: Supabase → `audit_log` table, Vercel logs filtered on `"level":"security"`.
 5. **Tell people** whose data was exposed, and your institution's IT/security contact, promptly.
 6. **Lost phone**: a user with a second authenticator can remove the old one under *My account*. The admin can clear a lead's 2FA from the Leads page (*Clear 2FA*). If the admin is locked out, remove the factor in Supabase → Authentication → Users → the admin → MFA, then enrol again. As a last resort set `ADMIN_MFA=off` temporarily.
 
 ## Habits
+
+- On GitHub, protect `main` (Settings → Branches): require a pull request, require review from Code Owners, and require the CI and Security checks to pass.
 
 - Merge Dependabot PRs weekly.
 - Each term, delete lead accounts that are no longer needed (and review who has Supabase/Vercel/GitHub access).

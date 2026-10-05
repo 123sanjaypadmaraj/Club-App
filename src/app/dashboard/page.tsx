@@ -1,3 +1,4 @@
+import { safeColor } from "@/lib/safe";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireProfile, getManagedClubs } from "@/lib/auth";
@@ -176,7 +177,7 @@ async function LeadHome() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {clubs.map((c) => (
-            <Link key={c.id} href={`/dashboard/clubs/${c.slug}`} className="card transition hover:shadow-md" style={{ borderTop: `3px solid ${c.accent_color}` }}>
+            <Link key={c.id} href={`/dashboard/clubs/${c.slug}`} className="card transition hover:shadow-md" style={{ borderTop: `3px solid ${safeColor(c.accent_color)}` }}>
               <h3 className="font-semibold">{c.name}</h3>
               <p className="text-sm text-muted">{c.category}</p>
             </Link>

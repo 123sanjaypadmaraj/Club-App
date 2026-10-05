@@ -5,6 +5,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { Field, Notice, PageHeader } from "@/components/ui";
 import { changePasswordAction } from "@/app/dashboard/actions";
 import { removeMfaFactorAction } from "@/app/login/mfa/actions";
+import { signOutEverywhereAction } from "@/app/login/actions";
 import { fmtDate } from "@/lib/format";
 
 export const metadata = { title: "My account" };
@@ -52,6 +53,11 @@ export default async function AccountPage({ searchParams }: PageProps<"/dashboar
           </>
         )}
       </section>
+      <form action={signOutEverywhereAction} className="card space-y-3">
+        <h2 className="font-semibold">Sign out of all devices</h2>
+        <p className="text-sm text-muted">Use this if you left yourself signed in on a shared or lost computer. You will need to sign in again here too.</p>
+        <SubmitButton className="btn" pendingText="Signing out…">Sign out everywhere</SubmitButton>
+      </form>
       <form action={changePasswordAction} className="card space-y-4">
         <h2 className="font-semibold">Change password</h2>
         <Field label="Current password"><input name="current" type="password" required autoComplete="current-password" className="input" /></Field>

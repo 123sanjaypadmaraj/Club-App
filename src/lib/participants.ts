@@ -1,3 +1,4 @@
+import { isEmail } from "@/lib/email";
 import type { Registration } from "@/lib/types";
 import { validateLengths } from "@/lib/limits";
 
@@ -38,7 +39,6 @@ export type ImportRow = {
   full_name: string; email: string; roll_no: string | null; department: string | null; year: number | null; phone: string | null;
 };
 type Col = keyof ImportRow;
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const HEADER_ALIASES: Record<Col, RegExp> = {
   full_name: /^(full\s*name|name|student\s*name|participant)$/i,
@@ -70,7 +70,7 @@ export function parseParticipantRows(rows: string[][]): { valid: ImportRow[]; in
     const rec: Partial<Record<Col, string>> = {};
     cols.forEach((k, i) => { if (k && row[i] !== undefined) rec[k] = row[i].trim(); });
     const email = (rec.email ?? "").toLowerCase();
-    if (!rec.full_name || !EMAIL.test(email)) { invalid++; continue; }
+    if (!rec.full_name || !isEmail(email)) { invalid++; continue; }
     if (validateLengths({ full_name: rec.full_name, email, roll_no: rec.roll_no, department: rec.department, phone: rec.phone })) { invalid++; continue; }
     if (seen.has(email)) { duplicates++; continue; }
     seen.add(email);

@@ -1,0 +1,7 @@
+# Security-sensitive code needs the owner's review (enable "Require review from Code Owners" in branch protection).
+* @123sanjaypadmaraj
+/supabase/ @123sanjaypadmaraj
+/src/proxy.ts @123sanjaypadmaraj
+/src/lib/auth.ts @123sanjaypadmaraj
+/next.config.ts @123sanjaypadmaraj
+/.github/ @123sanjaypadmaraj
